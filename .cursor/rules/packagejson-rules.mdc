@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+DO NOT DOWNGRADE VERSION of package.json

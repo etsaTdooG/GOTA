@@ -27,11 +27,9 @@ import {
   IconChevronsLeft,
   IconChevronsRight,
   IconCircleCheckFilled,
-  IconDotsVertical,
   IconGripVertical,
   IconLayoutColumns,
-  IconLoader,
-  IconPlus,
+  IconTrash,
   IconTrendingUp,
 } from "@tabler/icons-react"
 import {
@@ -77,8 +75,6 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
@@ -105,19 +101,29 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 export const schema = z.object({
-  id: z.number(),
-  header: z.string(),
-  type: z.string(),
+  id: z.string(),
+  email: z.string(),
+  name: z.string(),
+  phone_number: z.string(),
+  created_at: z.string(),
   status: z.string(),
-  target: z.string(),
-  limit: z.string(),
-  reviewer: z.string(),
 })
 
 // Create a separate component for the drag handle
-function DragHandle({ id }: { id: number }) {
+function DragHandle({ id }: { id: string }) {
   const { attributes, listeners } = useSortable({
     id,
   })
@@ -169,20 +175,26 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "header",
-    header: "Header",
+    accessorKey: "name",
+    header: "Name",
     cell: ({ row }) => {
       return <TableCellViewer item={row.original} />
     },
     enableHiding: false,
   },
   {
-    accessorKey: "type",
-    header: "Section Type",
+    accessorKey: "email",
+    header: "Email",
     cell: ({ row }) => (
-      <div className="w-32">
-        <Badge variant="outline" className="text-muted-foreground px-1.5">
-          {row.original.type}
+      <div className="max-w-[180px] min-w-[120px] sm:w-auto">
+        <Badge 
+          variant="outline" 
+          className="text-muted-foreground px-1.5 w-full text-left"
+          title={row.original.email}
+        >
+          <span className="block truncate">
+            {row.original.email}
+          </span>
         </Badge>
       </div>
     ),
@@ -190,124 +202,62 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => (
-      <Badge variant="outline" className="text-muted-foreground px-1.5">
-        {row.original.status === "Done" ? (
-          <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
-        ) : (
-          <IconLoader />
-        )}
-        {row.original.status}
-      </Badge>
-    ),
-  },
-  {
-    accessorKey: "target",
-    header: () => <div className="w-full text-right">Target</div>,
-    cell: ({ row }) => (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
-            loading: `Saving ${row.original.header}`,
-            success: "Done",
-            error: "Error",
-          })
-        }}
-      >
-        <Label htmlFor={`${row.original.id}-target`} className="sr-only">
-          Target
-        </Label>
-        <Input
-          className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-right shadow-none focus-visible:border dark:bg-transparent"
-          defaultValue={row.original.target}
-          id={`${row.original.id}-target`}
-        />
-      </form>
-    ),
-  },
-  {
-    accessorKey: "limit",
-    header: () => <div className="w-full text-right">Limit</div>,
-    cell: ({ row }) => (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
-            loading: `Saving ${row.original.header}`,
-            success: "Done",
-            error: "Error",
-          })
-        }}
-      >
-        <Label htmlFor={`${row.original.id}-limit`} className="sr-only">
-          Limit
-        </Label>
-        <Input
-          className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-right shadow-none focus-visible:border dark:bg-transparent"
-          defaultValue={row.original.limit}
-          id={`${row.original.id}-limit`}
-        />
-      </form>
-    ),
-  },
-  {
-    accessorKey: "reviewer",
-    header: "Reviewer",
     cell: ({ row }) => {
-      const isAssigned = row.original.reviewer !== "Assign reviewer"
-
-      if (isAssigned) {
-        return row.original.reviewer
+      const status = row.original.status;
+      let badgeVariant = "outline";
+      let badgeClass = "text-muted-foreground";
+      
+      // Customize badge styles based on status
+      if (status === "Active") {
+        badgeVariant = "default";
+        badgeClass = "bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/20";
+      } else if (status === "Inactive") {
+        badgeVariant = "secondary";
+        badgeClass = "bg-gray-500/20 text-gray-700 dark:text-gray-400 border-gray-500/20";
+      } else if (status === "Pending") {
+        badgeVariant = "secondary";
+        badgeClass = "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/20";
       }
-
+      
       return (
-        <>
-          <Label htmlFor={`${row.original.id}-reviewer`} className="sr-only">
-            Reviewer
-          </Label>
-          <Select>
-            <SelectTrigger
-              className="w-38 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate"
-              size="sm"
-              id={`${row.original.id}-reviewer`}
-            >
-              <SelectValue placeholder="Assign reviewer" />
-            </SelectTrigger>
-            <SelectContent align="end">
-              <SelectItem value="Eddie Lake">Eddie Lake</SelectItem>
-              <SelectItem value="Jamik Tashpulatov">
-                Jamik Tashpulatov
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </>
-      )
+        <Badge variant={badgeVariant as any} className={badgeClass}>
+          {status}
+        </Badge>
+      );
     },
   },
   {
-    id: "actions",
-    cell: () => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
-            size="icon"
-          >
-            <IconDotsVertical />
-            <span className="sr-only">Open menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-32">
-          <DropdownMenuItem>Edit</DropdownMenuItem>
-          <DropdownMenuItem>Make a copy</DropdownMenuItem>
-          <DropdownMenuItem>Favorite</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+    accessorKey: "phone_number",
+    header: "Phone Number",
+    cell: ({ row }) => (
+      <div className="max-w-[120px] overflow-hidden whitespace-nowrap">
+        <Badge variant="outline" className="text-muted-foreground px-1.5 overflow-hidden text-ellipsis">
+          <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400 shrink-0 mr-1" />
+          <span className="truncate">{row.original.phone_number}</span>
+        </Badge>
+      </div>
     ),
+  },
+  {
+    accessorKey: "created_at",
+    header: () => <div className="text-right">Created At</div>,
+    cell: ({ row }) => {
+      // Format date for display
+      const formattedDate = new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      }).format(new Date(row.original.created_at));
+      
+      return (
+        <div className="text-right">
+          {formattedDate}
+        </div>
+      );
+    },
   },
 ]
 
@@ -401,16 +351,27 @@ export function DataTable({
     }
   }
 
+  // Function to delete selected rows
+  function deleteSelectedRows() {
+    const selectedRowIds = Object.keys(rowSelection);
+    const newData = data.filter(row => !selectedRowIds.includes(row.id));
+    setData(newData);
+    setRowSelection({});
+    toast.success(`${selectedRowIds.length} user(s) deleted successfully`);
+  }
+
+  const hasSelectedRows = Object.keys(rowSelection).length > 0;
+
   return (
     <Tabs
-      defaultValue="outline"
+      defaultValue="users-table"
       className="w-full flex-col justify-start gap-6"
     >
       <div className="flex items-center justify-between px-4 lg:px-6">
         <Label htmlFor="view-selector" className="sr-only">
           View
         </Label>
-        <Select defaultValue="outline">
+        <Select defaultValue="users-table">
           <SelectTrigger
             className="flex w-fit @4xl/main:hidden"
             size="sm"
@@ -419,23 +380,35 @@ export function DataTable({
             <SelectValue placeholder="Select a view" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="outline">Outline</SelectItem>
-            <SelectItem value="past-performance">Past Performance</SelectItem>
-            <SelectItem value="key-personnel">Key Personnel</SelectItem>
-            <SelectItem value="focus-documents">Focus Documents</SelectItem>
+            <SelectItem value="users-table">Users Table</SelectItem>
           </SelectContent>
         </Select>
         <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
-          <TabsTrigger value="outline">Outline</TabsTrigger>
-          <TabsTrigger value="past-performance">
-            Past Performance <Badge variant="secondary">3</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="key-personnel">
-            Key Personnel <Badge variant="secondary">2</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="focus-documents">Focus Documents</TabsTrigger>
+          <TabsTrigger value="users-table">Users Table</TabsTrigger>
         </TabsList>
         <div className="flex items-center gap-2">
+          {hasSelectedRows && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <IconTrash className="size-4 mr-2" />
+                  <span>Delete Selected</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete {Object.keys(rowSelection).length} selected user(s)? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={deleteSelectedRows}>Delete</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
@@ -469,14 +442,10 @@ export function DataTable({
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="outline" size="sm">
-            <IconPlus />
-            <span className="hidden lg:inline">Add Section</span>
-          </Button>
         </div>
       </div>
       <TabsContent
-        value="outline"
+        value="users-table"
         className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
       >
         <div className="overflow-hidden rounded-lg border">
@@ -608,115 +577,232 @@ export function DataTable({
           </div>
         </div>
       </TabsContent>
-      <TabsContent
-        value="past-performance"
-        className="flex flex-col px-4 lg:px-6"
-      >
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
-      </TabsContent>
-      <TabsContent value="key-personnel" className="flex flex-col px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
-      </TabsContent>
-      <TabsContent
-        value="focus-documents"
-        className="flex flex-col px-4 lg:px-6"
-      >
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
-      </TabsContent>
     </Tabs>
   )
 }
 
-const chartData = [
-  { month: "January", desktop: 186, mobile: 80 },
-  { month: "February", desktop: 305, mobile: 200 },
-  { month: "March", desktop: 237, mobile: 120 },
-  { month: "April", desktop: 73, mobile: 190 },
-  { month: "May", desktop: 209, mobile: 130 },
-  { month: "June", desktop: 214, mobile: 140 },
-]
-
 const chartConfig = {
   desktop: {
-    label: "Desktop",
+    label: "Activity",
     color: "var(--primary)",
   },
   mobile: {
-    label: "Mobile",
+    label: "Guests",
     color: "var(--primary)",
   },
 } satisfies ChartConfig
 
 function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
   const isMobile = useIsMobile()
+  const [chartData, setChartData] = React.useState<Array<{month: string, desktop: number, mobile: number}>>([])
+  const [trendingValue, setTrendingValue] = React.useState<number>(0)
+  const [isDataLoaded, setIsDataLoaded] = React.useState(false)
+  
+  React.useEffect(() => {
+    // Import data directly without fetching
+    const loadReservationsData = async () => {
+      try {
+        // Instead of fetching remotely, import the data directly
+        const data = await import("@/app/dashboard/data.json").then(module => module.default);
+        
+        console.log(`User ${item.name} (${item.id}) - Loading data...`);
+        
+        // Get reservations for this user
+        const userReservations = data.reservations.filter(
+          (res) => res.user_id === item.id
+        );
+        
+        console.log(`Found ${userReservations.length} reservations for user ${item.name}`);
+        
+        if (userReservations.length === 0) {
+          // If no reservations found, create minimal empty data
+          setChartData([]);
+          setTrendingValue(0);
+          setIsDataLoaded(true);
+          return;
+        }
+        
+        // Find the actual date range from the data
+        // The reference date is March 29, 2025
+        const referenceDate = new Date('2025-03-29T00:00:00Z');
+        
+        // Get all unique months from the reservations data
+        const allMonths = userReservations.map(res => {
+          const date = new Date(res.created_at);
+          return `${date.getFullYear()}-${date.getMonth()}`;
+        });
+        
+        // Get unique months (remove duplicates)
+        const uniqueMonths = [...new Set(allMonths)];
+        
+        // Sort months chronologically
+        uniqueMonths.sort();
+        
+        // Get the last 6 months of data or all if less than 6
+        let monthsToUse = uniqueMonths;
+        if (uniqueMonths.length > 6) {
+          monthsToUse = uniqueMonths.slice(-6); // Get the last 6 months
+        }
+        
+        // Generate chart data based on these actual months
+        const newChartData = monthsToUse.map(monthKey => {
+          const [year, month] = monthKey.split('-').map(Number);
+          
+          // Create date objects for first and last day of month
+          const firstDay = new Date(year, month, 1);
+          const lastDay = new Date(year, month + 1, 0);
+          
+          // Month name for display
+          const monthName = firstDay.toLocaleString('default', { month: 'long', year: 'numeric' });
+          
+          // Filter reservations for this month
+          const monthReservations = userReservations.filter(res => {
+            const resDate = new Date(res.created_at);
+            return resDate >= firstDay && resDate <= lastDay;
+          });
+          
+          // Count of reservations for the month
+          const activityCount = monthReservations.length;
+          
+          // Sum of guests for the month
+          const guestCount = monthReservations.reduce((sum, res) => 
+            sum + res.guest_count, 0);
+          
+          console.log(`${item.name} - ${monthName}: ${activityCount} reservations, ${guestCount} guests`);
+            
+          return {
+            month: monthName,
+            desktop: activityCount, // Activity count
+            mobile: guestCount      // Guest count
+          };
+        });
+        
+        setChartData(newChartData);
+        
+        // Calculate trending percentage
+        if (newChartData.length >= 2) {
+          const currentMonth = {
+            activity: newChartData[newChartData.length - 1].desktop,
+            guests: newChartData[newChartData.length - 1].mobile
+          };
+          
+          const prevMonth = {
+            activity: newChartData[newChartData.length - 2].desktop,
+            guests: newChartData[newChartData.length - 2].mobile
+          };
+          
+          // Use combined metric for trend
+          const currentTotal = currentMonth.activity + currentMonth.guests * 0.5;
+          const prevTotal = prevMonth.activity + prevMonth.guests * 0.5;
+          
+          if (prevTotal === 0) {
+            // Avoid division by zero
+            setTrendingValue(currentTotal > 0 ? 100 : 0);
+          } else {
+            const percentChange = ((currentTotal - prevTotal) / prevTotal) * 100;
+            setTrendingValue(Number(percentChange.toFixed(1)));
+          }
+          
+          console.log(`Trend for ${item.name}: ${currentTotal} vs ${prevTotal} = ${trendingValue}%`);
+        }
+        
+        setIsDataLoaded(true);
+      } catch (error) {
+        console.error("Error loading reservation data:", error);
+        
+        // Just show empty data instead of fake data
+        setChartData([]);
+        setTrendingValue(0);
+        setIsDataLoaded(true);
+      }
+    };
+    
+    loadReservationsData();
+  }, [item.id, item.name]);
 
   return (
     <Drawer direction={isMobile ? "bottom" : "right"}>
       <DrawerTrigger asChild>
         <Button variant="link" className="text-foreground w-fit px-0 text-left">
-          {item.header}
+          {item.name}
         </Button>
       </DrawerTrigger>
       <DrawerContent>
         <DrawerHeader className="gap-1">
-          <DrawerTitle>{item.header}</DrawerTitle>
+          <DrawerTitle>{item.name}</DrawerTitle>
           <DrawerDescription>
-            Showing total visitors for the last 6 months
+            User details and information
           </DrawerDescription>
         </DrawerHeader>
         <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
           {!isMobile && (
             <>
               <ChartContainer config={chartConfig}>
-                <AreaChart
-                  accessibilityLayer
-                  data={chartData}
-                  margin={{
-                    left: 0,
-                    right: 10,
-                  }}
-                >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(value) => value.slice(0, 3)}
-                    hide
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent indicator="dot" />}
-                  />
-                  <Area
-                    dataKey="mobile"
-                    type="natural"
-                    fill="var(--color-mobile)"
-                    fillOpacity={0.6}
-                    stroke="var(--color-mobile)"
-                    stackId="a"
-                  />
-                  <Area
-                    dataKey="desktop"
-                    type="natural"
-                    fill="var(--color-desktop)"
-                    fillOpacity={0.4}
-                    stroke="var(--color-desktop)"
-                    stackId="a"
-                  />
-                </AreaChart>
+                {chartData.length > 0 ? (
+                  <AreaChart
+                    accessibilityLayer
+                    data={chartData}
+                    margin={{
+                      left: 0,
+                      right: 10,
+                    }}
+                  >
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="month"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      tickFormatter={(value) => value.slice(0, 3)}
+                      hide
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent indicator="dot" />}
+                    />
+                    <Area
+                      dataKey="mobile"
+                      type="natural"
+                      fill="var(--color-mobile)"
+                      fillOpacity={0.6}
+                      stroke="var(--color-mobile)"
+                      stackId="a"
+                    />
+                    <Area
+                      dataKey="desktop"
+                      type="natural"
+                      fill="var(--color-desktop)"
+                      fillOpacity={0.4}
+                      stroke="var(--color-desktop)"
+                      stackId="a"
+                    />
+                  </AreaChart>
+                ) : (
+                  <div className="flex h-[200px] w-full items-center justify-center text-muted-foreground">
+                    No activity data available
+                  </div>
+                )}
               </ChartContainer>
               <Separator />
               <div className="grid gap-2">
                 <div className="flex gap-2 leading-none font-medium">
-                  Trending up by 5.2% this month{" "}
-                  <IconTrendingUp className="size-4" />
+                  {!isDataLoaded ? (
+                    "Loading trend data..."
+                  ) : chartData.length < 2 ? (
+                    "Insufficient data for trend analysis"
+                  ) : trendingValue > 0 ? (
+                    <>Trending up by {trendingValue}% this month <IconTrendingUp className="size-4" /></>
+                  ) : trendingValue < 0 ? (
+                    <>Trending down by {Math.abs(trendingValue)}% this month <IconTrendingUp className="size-4 rotate-180" /></>
+                  ) : (
+                    "No change in trend this month"
+                  )}
                 </div>
                 <div className="text-muted-foreground">
-                  Showing total visitors for the last 6 months. This is just
-                  some random text to test the layout. It spans multiple lines
-                  and should wrap around.
+                  {chartData.length > 0 ? 
+                    "Showing actual user reservation activity and guest count based on historical data." :
+                    "This user has no reservation history to display."
+                  }
                 </div>
               </div>
               <Separator />
@@ -724,33 +810,19 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           )}
           <form className="flex flex-col gap-4">
             <div className="flex flex-col gap-3">
-              <Label htmlFor="header">Header</Label>
-              <Input id="header" defaultValue={item.header} />
+              <Label htmlFor="name">Name</Label>
+              <Input id="name" defaultValue={item.name} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
-                <Label htmlFor="type">Type</Label>
-                <Select defaultValue={item.type}>
-                  <SelectTrigger id="type" className="w-full">
-                    <SelectValue placeholder="Select a type" />
+                <Label htmlFor="email">Email</Label>
+                <Select defaultValue={item.email}>
+                  <SelectTrigger id="email" className="w-full">
+                    <SelectValue placeholder="Select an email" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Table of Contents">
-                      Table of Contents
-                    </SelectItem>
-                    <SelectItem value="Executive Summary">
-                      Executive Summary
-                    </SelectItem>
-                    <SelectItem value="Technical Approach">
-                      Technical Approach
-                    </SelectItem>
-                    <SelectItem value="Design">Design</SelectItem>
-                    <SelectItem value="Capabilities">Capabilities</SelectItem>
-                    <SelectItem value="Focus Documents">
-                      Focus Documents
-                    </SelectItem>
-                    <SelectItem value="Narrative">Narrative</SelectItem>
-                    <SelectItem value="Cover Page">Cover Page</SelectItem>
+                    <SelectItem value={item.email}>{item.email}</SelectItem>
+                    <SelectItem value="alternate@example.com">alternate@example.com</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -761,37 +833,34 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                     <SelectValue placeholder="Select a status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Done">Done</SelectItem>
-                    <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Not Started">Not Started</SelectItem>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Inactive">Inactive</SelectItem>
+                    <SelectItem value="Pending">Pending</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
-                <Label htmlFor="target">Target</Label>
-                <Input id="target" defaultValue={item.target} />
+                <Label htmlFor="phone_number">Phone Number</Label>
+                <Input id="phone_number" defaultValue={item.phone_number} />
               </div>
               <div className="flex flex-col gap-3">
-                <Label htmlFor="limit">Limit</Label>
-                <Input id="limit" defaultValue={item.limit} />
+                <Label htmlFor="created_at">Created At</Label>
+                <Input 
+                  id="created_at" 
+                  defaultValue={new Intl.DateTimeFormat('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                  }).format(new Date(item.created_at))}
+                  
+                  readOnly 
+                />
               </div>
-            </div>
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="reviewer">Reviewer</Label>
-              <Select defaultValue={item.reviewer}>
-                <SelectTrigger id="reviewer" className="w-full">
-                  <SelectValue placeholder="Select a reviewer" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Eddie Lake">Eddie Lake</SelectItem>
-                  <SelectItem value="Jamik Tashpulatov">
-                    Jamik Tashpulatov
-                  </SelectItem>
-                  <SelectItem value="Emily Whalen">Emily Whalen</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </form>
         </div>

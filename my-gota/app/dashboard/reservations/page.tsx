@@ -5,7 +5,7 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import { z } from "zod"
-import reservationData from "../data.json"
+import { getReservations } from "@/lib/supabase/database"
 
 // Define the reservation schema
 const reservationSchema = z.object({
@@ -58,13 +58,15 @@ function ReservationTable({ data }: { data: Reservation[] }) {
   )
 }
 
-export default function Page() {
+export default async function Page() {
+  const reservations = await getReservations();
+  
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
       <div className="px-4 lg:px-6">
         <h1 className="text-3xl font-bold tracking-tight mb-4">Reservations</h1>
         <p className="text-muted-foreground mb-6">View and manage restaurant reservations</p>
-        {/* Reservations content here */}
+        <ReservationTable data={reservations} />
       </div>
     </div>
   )

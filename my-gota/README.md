@@ -1,3 +1,90 @@
+# GOTA - Good Taste Restaurant Reservation System
+
+GOTA là hệ thống quản lý đặt bàn nhà hàng hiện đại, được xây dựng bằng Next.js và Supabase. Ứng dụng này cung cấp giải pháp toàn diện cho việc quản lý đặt bàn, quản lý nhà hàng và quản lý người dùng.
+
+## Tính năng chính
+
+- **Hệ thống đặt bàn**: Quản lý đặt bàn nhà hàng với các trạng thái khác nhau (Chờ xác nhận, Đã xác nhận, Đã hủy, Đã hoàn thành, Đã đến)
+- **Quản lý nhà hàng**: Thêm, sửa, xóa thông tin nhà hàng
+- **Quản lý bàn**: Quản lý thông tin bàn và sức chứa
+- **Quản lý người dùng**: Phân quyền người dùng (khách hàng, quản trị viên, nhân viên)
+- **Phân tích dữ liệu**: Thống kê và phân tích dữ liệu đặt bàn
+
+## Công nghệ sử dụng
+
+- **Frontend**: [Next.js 15](https://nextjs.org/), [React 19](https://react.dev/), [TypeScript](https://www.typescriptlang.org/)
+- **UI/UX**: [Tailwind CSS](https://tailwindcss.com/), [Shadcn UI](https://ui.shadcn.com/)
+- **Backend/Database**: [Supabase](https://supabase.io/) (PostgreSQL)
+- **Authentication**: Supabase Auth
+- **Hosting**: Vercel (đề xuất)
+
+## Cấu trúc dữ liệu
+
+Hệ thống sử dụng các bảng chính sau trong cơ sở dữ liệu:
+
+- **Users**: Thông tin người dùng với các vai trò khác nhau (khách hàng, quản trị viên, nhân viên)
+- **Restaurants**: Thông tin nhà hàng bao gồm tên, giờ mở cửa và đóng cửa
+- **Tables**: Thông tin bàn trong nhà hàng, bao gồm số bàn và sức chứa
+- **Reservations**: Thông tin đặt bàn, liên kết người dùng, nhà hàng và bàn
+
+## Bắt đầu
+
+### Yêu cầu hệ thống
+
+- Node.js 20.x trở lên
+- PNPM (khuyến nghị) hoặc NPM
+- Tài khoản Supabase
+
+### Cài đặt
+
+1. Clone repository:
+
+```bash
+git clone https://github.com/your-username/gota.git
+cd gota
+```
+
+2. Cài đặt dependencies:
+
+```bash
+pnpm install
+```
+
+3. Cấu hình biến môi trường:
+   
+Tạo file `.env.local` với nội dung:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
+
+4. Khởi tạo cơ sở dữ liệu:
+
+```bash
+pnpm seed
+```
+
+5. Chạy môi trường phát triển:
+
+```bash
+pnpm dev
+```
+
+Mở [http://localhost:3000](http://localhost:3000) để xem kết quả.
+
+## Triển khai
+
+Cách đơn giản nhất để triển khai ứng dụng Next.js là sử dụng [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) từ nhóm phát triển Next.js.
+
+## Đóng góp
+
+Mọi đóng góp đều được hoan nghênh! Vui lòng tạo issue hoặc pull request để đóng góp vào dự án.
+
+## Giấy phép
+
+[MIT](LICENSE)
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

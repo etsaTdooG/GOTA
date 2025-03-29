@@ -1,4 +1,4 @@
-import { createClient as createServerClient } from './server';
+import { createClient as createServerClientFn } from './server';
 import { createClient as createBrowserClient } from './client';
 
 // Type definitions based on data.json structure
@@ -45,6 +45,11 @@ export type Reservation = {
 
 // Helper function to determine if we are on the client-side
 const isClient = typeof window !== 'undefined';
+
+// Helper to create server client
+const createServerClient = async () => {
+  return await createServerClientFn();
+};
 
 // Fetchers for each table that work in both client and server components
 export async function getUsers(): Promise<User[]> {

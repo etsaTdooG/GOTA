@@ -12,7 +12,8 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
-import type { Restaurant, Reservation } from "@/lib/supabase/database";
+import type { Restaurant, Reservation, User } from "@/lib/supabase/database";
+import { getRestaurants, getReservations, getUserById, getRestaurantById } from "@/lib/supabase/database";
 
 // Event data type with additional properties
 interface EventData extends Reservation {
@@ -49,18 +50,8 @@ export default function EventCalendar() {
   useEffect(() => {
     const fetchRestaurants = async () => {
       try {
-        const supabase = createClient();
-        const { data, error } = await supabase
-          .from('restaurants')
-          .select('*')
-          .order('name');
-          
-        if (error) {
-          console.error('Error fetching restaurants:', error);
-          return;
-        }
-        
-        setRestaurants(data || []);
+        const restaurantsData = await getRestaurants();
+        setRestaurants(restaurantsData || []);
       } catch (error) {
         console.error('Error fetching restaurants:', error);
       }
@@ -74,35 +65,21 @@ export default function EventCalendar() {
     const fetchReservations = async () => {
       setIsLoading(true);
       try {
-        const supabase = createClient();
+        // Get reservations based on filter
+        const filters = selectedValue !== "all" 
+          ? { restaurantId: parseInt(selectedValue, 10) }
+          : undefined;
         
-        // Build query for reservations
-        let query = supabase.from('reservations').select('*');
-        
-        // Filter reservations by restaurant if needed
-        if (selectedValue !== "all") {
-          query = query.eq('restaurant_id', parseInt(selectedValue, 10));
-        }
-        
-        const { data: reservationsData, error: reservationsError } = await query;
-        
-        if (reservationsError) {
-          console.error('Error fetching reservations:', reservationsError);
-          return;
-        }
+        const reservationsData = await getReservations(filters);
         
         // Transform reservations to calendar events
         const transformedEvents = await Promise.all(
           (reservationsData || []).map(async (reservation) => {
             // Fetch user and restaurant for each reservation
-            const supabase = createClient();
-            const [{ data: userData }, { data: restaurantData }] = await Promise.all([
-              supabase.from('users').select('*').eq('id', reservation.user_id).single(),
-              supabase.from('restaurants').select('*').eq('id', reservation.restaurant_id).single()
+            const [user, restaurant] = await Promise.all([
+              getUserById(reservation.user_id),
+              getRestaurantById(reservation.restaurant_id)
             ]);
-            
-            const user = userData;
-            const restaurant = restaurantData;
             
             const userName = user ? user.name : 'Unknown';
             const restaurantName = restaurant ? restaurant.name : 'Unknown Restaurant';
@@ -159,7 +136,7 @@ export default function EventCalendar() {
   // Get time boundaries for current selection
   const currentDayBoundaries = useMemo(() => {
     return getDayBoundaries(selectedValue);
-  }, [selectedValue, getDayBoundaries]);
+  }, [selectedValue, restaurants]);
   
   // Create the calendar app configuration
   const calendarApp = useNextCalendarApp({

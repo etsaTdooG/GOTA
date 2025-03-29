@@ -31,6 +31,9 @@ import {
   IconLayoutColumns,
   IconTrash,
   IconTrendingUp,
+  IconRefresh,
+  IconSortAscending,
+  IconSortDescending,
 } from "@tabler/icons-react"
 import {
   ColumnDef,
@@ -121,7 +124,8 @@ export const schema = z.object({
   name: z.string(),
   phone_number: z.string(),
   created_at: z.string(),
-  status: z.string(),
+  status: z.enum(['Active', 'Inactive', 'Pending']),
+  role: z.enum(['customer', 'admin', 'staff']).optional()
 })
 
 // Create a separate component for the drag handle
@@ -178,7 +182,24 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "name",
-    header: "Name",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="flex items-center gap-1 px-0 font-medium"
+        >
+          Name
+          {column.getIsSorted() === "asc" ? (
+            <IconSortAscending className="ml-2 h-4 w-4" />
+          ) : column.getIsSorted() === "desc" ? (
+            <IconSortDescending className="ml-2 h-4 w-4" />
+          ) : (
+            <IconSortAscending className="ml-2 h-4 w-4 opacity-30" />
+          )}
+        </Button>
+      )
+    },
     cell: ({ row }) => {
       return <TableCellViewer item={row.original} />
     },
@@ -186,13 +207,31 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "email",
-    header: "Email",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="flex items-center gap-1 px-0 font-medium"
+        >
+          Email
+          {column.getIsSorted() === "asc" ? (
+            <IconSortAscending className="ml-2 h-4 w-4" />
+          ) : column.getIsSorted() === "desc" ? (
+            <IconSortDescending className="ml-2 h-4 w-4" />
+          ) : (
+            <IconSortAscending className="ml-2 h-4 w-4 opacity-30" />
+          )}
+        </Button>
+      )
+    },
     cell: ({ row }) => (
       <div className="max-w-[180px] min-w-[120px] sm:w-auto">
         <Badge 
           variant="outline" 
           className="text-muted-foreground px-1.5 w-full text-left"
           title={row.original.email}
+          data-user-email={row.original.id}
         >
           <span className="block truncate">
             {row.original.email}
@@ -203,7 +242,24 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="flex items-center gap-1 px-0 font-medium"
+        >
+          Status
+          {column.getIsSorted() === "asc" ? (
+            <IconSortAscending className="ml-2 h-4 w-4" />
+          ) : column.getIsSorted() === "desc" ? (
+            <IconSortDescending className="ml-2 h-4 w-4" />
+          ) : (
+            <IconSortAscending className="ml-2 h-4 w-4 opacity-30" />
+          )}
+        </Button>
+      )
+    },
     cell: ({ row }) => {
       const status = row.original.status;
       let badgeVariant: "default" | "secondary" | "destructive" | "outline" = "default";
@@ -222,7 +278,12 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       }
       
       return (
-        <Badge variant={badgeVariant} className={badgeClass}>
+        <Badge 
+          variant={badgeVariant} 
+          className={badgeClass}
+          data-user-status={row.original.id}
+          data-status-value={status}
+        >
           {status}
         </Badge>
       );
@@ -230,10 +291,31 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "phone_number",
-    header: "Phone Number",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="flex items-center gap-1 px-0 font-medium"
+        >
+          Phone Number
+          {column.getIsSorted() === "asc" ? (
+            <IconSortAscending className="ml-2 h-4 w-4" />
+          ) : column.getIsSorted() === "desc" ? (
+            <IconSortDescending className="ml-2 h-4 w-4" />
+          ) : (
+            <IconSortAscending className="ml-2 h-4 w-4 opacity-30" />
+          )}
+        </Button>
+      )
+    },
     cell: ({ row }) => (
       <div className="max-w-[120px] overflow-hidden whitespace-nowrap">
-        <Badge variant="outline" className="text-muted-foreground px-1.5 overflow-hidden text-ellipsis">
+        <Badge 
+          variant="outline" 
+          className="text-muted-foreground px-1.5 overflow-hidden text-ellipsis"
+          data-user-phone={row.original.id}
+        >
           <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400 shrink-0 mr-1" />
           <span className="truncate">{row.original.phone_number}</span>
         </Badge>
@@ -242,7 +324,26 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "created_at",
-    header: () => <div className="text-right">Created At</div>,
+    header: ({ column }) => {
+      return (
+        <div className="text-right">
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="flex items-center gap-1 px-0 font-medium ml-auto"
+          >
+            Created At
+            {column.getIsSorted() === "asc" ? (
+              <IconSortAscending className="ml-2 h-4 w-4" />
+            ) : column.getIsSorted() === "desc" ? (
+              <IconSortDescending className="ml-2 h-4 w-4" />
+            ) : (
+              <IconSortAscending className="ml-2 h-4 w-4 opacity-30" />
+            )}
+          </Button>
+        </div>
+      )
+    },
     cell: ({ row }) => {
       // Format date for display
       const formattedDate = new Intl.DateTimeFormat('en-US', {
@@ -290,8 +391,17 @@ function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
 
 export function DataTable({
   data: initialData,
+  onUpdate,
+  pagination,
 }: {
   data: z.infer<typeof schema>[]
+  onUpdate?: (userId: string, userData: Partial<z.infer<typeof schema>>) => Promise<boolean>
+  pagination?: {
+    pageIndex: number
+    pageSize: number
+    totalCount: number
+    onPageChange: (pageIndex: number, pageSize: number) => void
+  }
 }) {
   const [data, setData] = React.useState(() => initialData)
   const [rowSelection, setRowSelection] = React.useState({})
@@ -301,7 +411,7 @@ export function DataTable({
     []
   )
   const [sorting, setSorting] = React.useState<SortingState>([])
-  const [pagination, setPagination] = React.useState({
+  const [paginationState, setPagination] = React.useState({
     pageIndex: 0,
     pageSize: 10,
   })
@@ -317,6 +427,87 @@ export function DataTable({
     [data]
   )
 
+  // Set up real-time subscription
+  React.useEffect(() => {
+    const supabase = createClient();
+    
+    // Subscribe to changes on the users table
+    const subscription = supabase
+      .channel('users-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'users'
+      }, (payload: any) => {
+        console.log('Real-time update received:', payload);
+        
+        // Handle different types of changes
+        if (payload.eventType === 'DELETE') {
+          // Remove the deleted user from the data
+          setData(prev => prev.filter(user => user.id !== payload.old.id));
+          // Clear selection if the deleted user was selected
+          setRowSelection(prev => {
+            const newSelection = {...prev};
+            if (payload.old && payload.old.id && newSelection[payload.old.id as keyof typeof newSelection]) {
+              delete newSelection[payload.old.id as keyof typeof newSelection];
+            }
+            return newSelection;
+          });
+        } else if (payload.eventType === 'INSERT') {
+          // Add the new user to the data
+          setData(prev => [...prev, payload.new as z.infer<typeof schema>]);
+        } else if (payload.eventType === 'UPDATE') {
+          // Update the existing user in the data
+          setData(prev => prev.map(user => 
+            user.id === payload.new.id ? payload.new as z.infer<typeof schema> : user
+          ));
+        }
+      })
+      .subscribe();
+    
+    // Set up event listener for refresh
+    const handleRefreshEvent = (event: CustomEvent) => {
+      console.log('Custom refresh event received', event.detail);
+      if (event.detail && event.detail.data) {
+        setData(event.detail.data as z.infer<typeof schema>[]);
+      }
+    };
+    
+    // Add event listener
+    window.addEventListener('refreshUsersData', handleRefreshEvent as EventListener);
+    
+    // Clean up subscription when component unmounts
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('refreshUsersData', handleRefreshEvent as EventListener);
+    };
+  }, []);
+
+  // Function to manually refresh data - keep for internal use by other components
+  const refreshData = async () => {
+    try {
+      const supabase = createClient();
+      const { data: refreshedData, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        console.error('Error refreshing data:', error);
+        toast.error('Failed to refresh data');
+        return;
+      }
+      
+      console.log('Refreshed data:', refreshedData);
+      if (refreshedData) {
+        setData(refreshedData as z.infer<typeof schema>[]);
+      }
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      toast.error('Failed to refresh data');
+    }
+  };
+
   const table = useReactTable({
     data,
     columns,
@@ -325,7 +516,7 @@ export function DataTable({
       columnVisibility,
       rowSelection,
       columnFilters,
-      pagination,
+      pagination: paginationState,
     },
     getRowId: (row) => row.id.toString(),
     enableRowSelection: true,
@@ -354,20 +545,102 @@ export function DataTable({
   }
 
   // Function to delete selected rows
-  function deleteSelectedRows() {
+  async function deleteSelectedRows() {
     const selectedRowIds = Object.keys(rowSelection);
-    const newData = data.filter(row => !selectedRowIds.includes(row.id));
-    setData(newData);
-    setRowSelection({});
-    toast.success(`${selectedRowIds.length} user(s) deleted successfully`);
+    
+    try {
+      console.log('Deleting users with IDs:', selectedRowIds);
+      
+      const supabase = createClient();
+      
+      // Check Supabase connection
+      const { data: authData } = await supabase.auth.getSession();
+      console.log('Auth check:', authData ? 'Connected' : 'Not connected');
+      
+      // First, delete any associated reservations
+      for (const id of selectedRowIds) {
+        console.log(`Checking for reservations for user ID: ${id}`);
+        
+        // Delete associated reservations first
+        const { error: reservationDeleteError } = await supabase
+          .from('reservations')
+          .delete()
+          .eq('user_id', id);
+          
+        if (reservationDeleteError) {
+          console.error(`Failed to delete reservations for user ${id}:`, reservationDeleteError);
+        }
+      }
+      
+      // Then attempt to delete the users
+      const results = await Promise.all(
+        selectedRowIds.map(async (id) => {
+          console.log(`Attempting to delete user with ID: ${id}`);
+          
+          const { error, status, statusText } = await supabase
+            .from('users')
+            .delete()
+            .eq('id', id);
+            
+          // Log deletion result
+          console.log(`Delete result for ID ${id}:`, { error, status, statusText });
+          
+          if (error) {
+            return { id, success: false, error, status };
+          }
+          
+          return { id, success: true, status };
+        })
+      );
+      
+      // Analyze results
+      const failures = results.filter(r => !r.success);
+      
+      if (failures.length > 0) {
+        console.error('Failed to delete some users:', failures);
+        const failedIds = failures.map(f => f.id).join(', ');
+        toast.error(`Failed to delete users: ${failedIds}. Please check console for details.`);
+      } else {
+        // Clear row selection
+        setRowSelection({});
+        toast.success(`${selectedRowIds.length} user(s) deleted successfully`);
+        
+        // Note: We no longer need to update local state here since the subscription will do it
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete users';
+      toast.error(`Error: ${errorMessage}`);
+      console.error('Error deleting users:', error);
+    }
   }
 
   const hasSelectedRows = Object.keys(rowSelection).length > 0;
+
+  // Update this function to support external pagination
+  function handlePaginationChange(pageIndex: number, pageSize: number) {
+    if (pagination) {
+      // Use external pagination if available
+      pagination.onPageChange(pageIndex, pageSize);
+    } else {
+      // Use internal pagination
+      setPagination({
+        pageIndex,
+        pageSize
+      });
+    }
+  }
+
+  // Luôn cập nhật dữ liệu từ props
+  React.useEffect(() => {
+    setData(initialData);
+  }, [initialData]);
 
   return (
     <Tabs
       defaultValue="users-table"
       className="w-full flex-col justify-start gap-6"
+      data-datatable
+      data-update-prop={onUpdate ? "true" : "false"}
     >
       <div className="flex items-center justify-between px-4 lg:px-6">
         <Label htmlFor="view-selector" className="sr-only">
@@ -512,14 +785,19 @@ export function DataTable({
                 Rows per page
               </Label>
               <Select
-                value={`${table.getState().pagination.pageSize}`}
+                value={`${pagination?.pageSize || table.getState().pagination.pageSize}`}
                 onValueChange={(value) => {
-                  table.setPageSize(Number(value))
+                  const newPageSize = Number(value);
+                  if (pagination) {
+                    pagination.onPageChange(pagination.pageIndex, newPageSize);
+                  } else {
+                    table.setPageSize(newPageSize);
+                  }
                 }}
               >
                 <SelectTrigger size="sm" className="w-20" id="rows-per-page">
                   <SelectValue
-                    placeholder={table.getState().pagination.pageSize}
+                    placeholder={pagination?.pageSize || table.getState().pagination.pageSize}
                   />
                 </SelectTrigger>
                 <SelectContent side="top">
@@ -532,15 +810,17 @@ export function DataTable({
               </Select>
             </div>
             <div className="flex w-fit items-center justify-center text-sm font-medium">
-              Page {table.getState().pagination.pageIndex + 1} of{" "}
-              {table.getPageCount()}
+              Page {(pagination?.pageIndex || table.getState().pagination.pageIndex) + 1} of{" "}
+              {pagination 
+                ? Math.ceil(pagination.totalCount / pagination.pageSize) || 1
+                : table.getPageCount()}
             </div>
             <div className="ml-auto flex items-center gap-2 lg:ml-0">
               <Button
                 variant="outline"
                 className="hidden h-8 w-8 p-0 lg:flex"
-                onClick={() => table.setPageIndex(0)}
-                disabled={!table.getCanPreviousPage()}
+                onClick={() => handlePaginationChange(0, pagination?.pageSize || table.getState().pagination.pageSize)}
+                disabled={pagination ? pagination.pageIndex === 0 : !table.getCanPreviousPage()}
               >
                 <span className="sr-only">Go to first page</span>
                 <IconChevronsLeft />
@@ -549,8 +829,11 @@ export function DataTable({
                 variant="outline"
                 className="size-8"
                 size="icon"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
+                onClick={() => {
+                  const currentIndex = pagination?.pageIndex || table.getState().pagination.pageIndex;
+                  handlePaginationChange(currentIndex - 1, pagination?.pageSize || table.getState().pagination.pageSize);
+                }}
+                disabled={pagination ? pagination.pageIndex === 0 : !table.getCanPreviousPage()}
               >
                 <span className="sr-only">Go to previous page</span>
                 <IconChevronLeft />
@@ -559,8 +842,15 @@ export function DataTable({
                 variant="outline"
                 className="size-8"
                 size="icon"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
+                onClick={() => {
+                  const currentIndex = pagination?.pageIndex || table.getState().pagination.pageIndex;
+                  const pageSize = pagination?.pageSize || table.getState().pagination.pageSize;
+                  handlePaginationChange(currentIndex + 1, pageSize);
+                }}
+                disabled={pagination 
+                  ? (pagination.pageIndex + 1) * pagination.pageSize >= pagination.totalCount
+                  : !table.getCanNextPage()
+                }
               >
                 <span className="sr-only">Go to next page</span>
                 <IconChevronRight />
@@ -569,8 +859,17 @@ export function DataTable({
                 variant="outline"
                 className="hidden size-8 lg:flex"
                 size="icon"
-                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                disabled={!table.getCanNextPage()}
+                onClick={() => {
+                  const pageSize = pagination?.pageSize || table.getState().pagination.pageSize;
+                  const lastPageIndex = pagination
+                    ? Math.max(0, Math.ceil(pagination.totalCount / pageSize) - 1)
+                    : table.getPageCount() - 1;
+                  handlePaginationChange(lastPageIndex, pageSize);
+                }}
+                disabled={pagination
+                  ? (pagination.pageIndex + 1) * pagination.pageSize >= pagination.totalCount
+                  : !table.getCanNextPage()
+                }
               >
                 <span className="sr-only">Go to last page</span>
                 <IconChevronsRight />
@@ -736,16 +1035,133 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
     loadReservations();
   }, [isOpen, loadReservationsData]); // Dependencies include loadReservationsData
 
+  // Add these states for form handling
+  const [formValues, setFormValues] = React.useState({
+    name: item.name,
+    email: item.email,
+    status: item.status,
+    phone_number: item.phone_number
+  });
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  
+  // Handle form changes
+  const handleFormChange = (field: string, value: string) => {
+    setFormValues(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+  
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e?.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      console.log('Form submitted with data:', formValues);
+      console.log('User ID being updated:', item.id);
+      
+      const supabase = createClient();
+      
+      // Create the user data update object
+      const updatedUserData = {
+        name: formValues.name,
+        email: formValues.email, 
+        status: formValues.status as 'Active' | 'Inactive' | 'Pending',
+        phone_number: formValues.phone_number
+      };
+      
+      console.log('Sending update to Supabase:', updatedUserData);
+      
+      // Simple table test to check connection
+      const { error: testError } = await supabase
+        .from('users')
+        .select('count')
+        .limit(1);
+        
+      if (testError) {
+        throw new Error(`Failed to connect to Supabase: ${testError.message}`);
+      }
+      
+      // Update the user in Supabase
+      const { data, error } = await supabase
+        .from('users')
+        .update(updatedUserData)
+        .eq('id', item.id)
+        .select();
+      
+      console.log('Update response:', { data, error });
+      
+      if (error) {
+        throw error;
+      }
+      
+      console.log('User updated successfully');
+      toast.success('User updated successfully');
+      
+      // Manually trigger a refresh after successful update
+      const refreshData = async () => {
+        try {
+          const { data: refreshedData, error: refreshError } = await supabase
+            .from('users')
+            .select('*')
+            .order('created_at', { ascending: false });
+            
+          if (refreshError) {
+            console.error('Error refreshing data:', refreshError);
+            return;
+          }
+          
+          // Use a custom event to notify parent component to refresh data
+          if (refreshedData) {
+            // Use the window object to dispatch the event
+            window.dispatchEvent(new CustomEvent('refreshUsersData', { 
+              detail: { data: refreshedData } 
+            }));
+          }
+        } catch (refreshErr) {
+          console.error('Error refreshing data:', refreshErr);
+        }
+      };
+      
+      // Call the refresh function
+      await refreshData();
+      
+      // Close the drawer
+      const closeButton = document.querySelector('[data-drawer-close]') as HTMLButtonElement;
+      if (closeButton) {
+        closeButton.click();
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+      let errorMessage = 'Failed to update user';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (error && typeof error === 'object') {
+        errorMessage = JSON.stringify(error);
+      }
+      
+      toast.error(`Error: ${errorMessage}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <Drawer direction={isMobile ? "bottom" : "right"}>
       <DrawerTrigger asChild>
-        <Button variant="link" className="text-foreground w-fit px-0 text-left">
+        <Button 
+          variant="link" 
+          className="text-foreground w-fit px-0 text-left"
+          data-user-id={item.id}
+        >
           {item.name}
         </Button>
       </DrawerTrigger>
       <DrawerContent>
         <DrawerHeader className="gap-1">
-          <DrawerTitle>{item.name}</DrawerTitle>
+          <DrawerTitle data-user-id={item.id}>{item.name}</DrawerTitle>
           <DrawerDescription>
             User details and information
           </DrawerDescription>
@@ -824,27 +1240,30 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
               <Separator />
             </>
           )}
-          <form className="flex flex-col gap-4">
+          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-3">
               <Label htmlFor="name">Name</Label>
-              <Input id="name" defaultValue={item.name} />
+              <Input 
+                id="name" 
+                value={formValues.name}
+                onChange={(e) => handleFormChange('name', e.target.value)}
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
                 <Label htmlFor="email">Email</Label>
-                <Select defaultValue={item.email}>
-                  <SelectTrigger id="email" className="w-full">
-                    <SelectValue placeholder="Select an email" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={item.email}>{item.email}</SelectItem>
-                    <SelectItem value="alternate@example.com">alternate@example.com</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input 
+                  id="email" 
+                  value={formValues.email}
+                  onChange={(e) => handleFormChange('email', e.target.value)}
+                />
               </div>
               <div className="flex flex-col gap-3">
                 <Label htmlFor="status">Status</Label>
-                <Select defaultValue={item.status}>
+                <Select 
+                  value={formValues.status}
+                  onValueChange={(value) => handleFormChange('status', value)}
+                >
                   <SelectTrigger id="status" className="w-full">
                     <SelectValue placeholder="Select a status" />
                   </SelectTrigger>
@@ -859,7 +1278,11 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
                 <Label htmlFor="phone_number">Phone Number</Label>
-                <Input id="phone_number" defaultValue={item.phone_number} />
+                <Input 
+                  id="phone_number" 
+                  value={formValues.phone_number}
+                  onChange={(e) => handleFormChange('phone_number', e.target.value)}
+                />
               </div>
               <div className="flex flex-col gap-3">
                 <Label htmlFor="created_at">Created At</Label>
@@ -873,7 +1296,6 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                     minute: '2-digit',
                     hour12: true
                   }).format(new Date(item.created_at))}
-                  
                   readOnly 
                 />
               </div>
@@ -881,8 +1303,10 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           </form>
         </div>
         <DrawerFooter>
-          <Button>Submit</Button>
-          <DrawerClose asChild>
+          <Button type="submit" onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? 'Submitting...' : 'Submit'}
+          </Button>
+          <DrawerClose data-drawer-close asChild>
             <Button variant="outline">Done</Button>
           </DrawerClose>
         </DrawerFooter>

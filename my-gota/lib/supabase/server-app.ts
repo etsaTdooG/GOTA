@@ -1,9 +1,9 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 // This function is only usable within the app directory's Server Components
 export async function createClient() {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,9 +11,13 @@ export async function createClient() {
     {
       cookies: {
         getAll() {
-          return cookieStore.getAll()
+          // Convert ReadonlyRequestCookies to the format expected by Supabase
+          return cookieStore.getAll().map(cookie => ({
+            name: cookie.name,
+            value: cookie.value
+          }))
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: { name: string; value: string; options?: CookieOptions }[]) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options)

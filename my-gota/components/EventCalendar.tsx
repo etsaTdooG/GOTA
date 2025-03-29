@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { format, isSameDay, parseISO, addDays, startOfWeek, isSameWeek, getDay } from 'date-fns';
+import { format, isSameDay, addDays, startOfWeek, isSameWeek } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -61,94 +61,32 @@ interface EventData extends Reservation {
   endDateTime: Date;
 }
 
-// Constants
-const HOURS = Array.from({ length: 17 }, (_, i) => i + 6);
+// Status colors
 const STATUS_COLORS = {
-  confirmed: {
-    bg: 'bg-green-200',
-    border: 'border-green-400',
-    badge: 'default',
-    textColor: 'text-green-800'
-  },
-  pending: {
-    bg: 'bg-orange-200',
-    border: 'border-orange-400',
-    badge: 'secondary',
-    textColor: 'text-orange-800'
-  },
-  arrived: {
-    bg: 'bg-blue-200',
-    border: 'border-blue-400',
-    badge: 'success',
-    textColor: 'text-blue-800'
-  },
-  cancelled: {
-    bg: 'bg-red-200',
-    border: 'border-red-400',
-    badge: 'destructive',
-    textColor: 'text-red-800'
-  },
-  waiting: { 
-    bg: 'bg-yellow-200',
-    border: 'border-yellow-400',
-    badge: 'outline',
-    textColor: 'text-yellow-800'
-  },
-  completed: {
-    bg: 'bg-lime-200',
-    border: 'border-lime-400',
-    badge: 'outline',
-    textColor: 'text-lime-800'
-  },
-  deposited: {
-    bg: 'bg-sky-200',
-    border: 'border-sky-400',
-    badge: 'outline',
-    textColor: 'text-sky-800'
-  },
-  default: {
-    bg: 'bg-muted',
-    border: 'border-muted-foreground',
-    badge: 'outline',
-    textColor: 'text-muted-foreground'
-  }
+  confirmed: { bg: 'bg-green-200', border: 'border-green-400', badge: 'default', textColor: 'text-green-800' },
+  pending: { bg: 'bg-orange-200', border: 'border-orange-400', badge: 'secondary', textColor: 'text-orange-800' },
+  arrived: { bg: 'bg-blue-200', border: 'border-blue-400', badge: 'default', textColor: 'text-blue-800' },
+  cancelled: { bg: 'bg-red-200', border: 'border-red-400', badge: 'destructive', textColor: 'text-red-800' },
+  waiting: { bg: 'bg-yellow-200', border: 'border-yellow-400', badge: 'outline', textColor: 'text-yellow-800' },
+  completed: { bg: 'bg-lime-200', border: 'border-lime-400', badge: 'outline', textColor: 'text-lime-800' },
+  deposited: { bg: 'bg-sky-200', border: 'border-sky-400', badge: 'outline', textColor: 'text-sky-800' },
+  default: { bg: 'bg-muted', border: 'border-muted-foreground', badge: 'outline', textColor: 'text-muted-foreground' },
 };
 
-// Format time to AM/PM
-const formatHour = (hour: number) => {
-  if (hour === 12) return '12 PM';
-  return hour > 12 ? `${hour-12} PM` : `${hour} AM`;
-};
+// Helper functions
+const formatHour = (hour: number) => (hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`);
 
 function groupOverlappingEvents(events: EventData[]): EventData[][] {
   if (!events.length) return [];
-  
-  // Sort events by start time
-  const sortedEvents = [...events].sort((a, b) => 
-    a.startDateTime.getTime() - b.startDateTime.getTime()
-  );
-  
+  const sortedEvents = [...events].sort((a, b) => a.startDateTime.getTime() - b.startDateTime.getTime());
   const groups: EventData[][] = [];
-  let currentGroup: EventData[] = [];
-  
   sortedEvents.forEach(event => {
-    // Find existing group where this event doesn't overlap with any event
-    const existingGroupIndex = groups.findIndex(group => 
-      group.every(groupEvent => 
-        event.startDateTime >= groupEvent.endDateTime || 
-        event.endDateTime <= groupEvent.startDateTime
-      )
+    const existingGroupIndex = groups.findIndex(group =>
+      group.every(ge => event.startDateTime >= ge.endDateTime || event.endDateTime <= ge.startDateTime)
     );
-    
-    if (existingGroupIndex !== -1) {
-      // Add to existing non-overlapping group
-      groups[existingGroupIndex].push(event);
-    } else {
-      // Create a new group
-      groups.push([event]);
-    }
+    if (existingGroupIndex !== -1) groups[existingGroupIndex].push(event);
+    else groups.push([event]);
   });
-  
   return groups;
 }
 
@@ -165,17 +103,9 @@ export default function EventCalendar() {
 
   // Detect mobile screens
   useEffect(() => {
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    // Initial check
+    const checkIfMobile = () => setIsMobile(window.innerWidth < 768);
     checkIfMobile();
-    
-    // Add event listener for window resize
     window.addEventListener('resize', checkIfMobile);
-    
-    // Cleanup
     return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
 
@@ -183,65 +113,54 @@ export default function EventCalendar() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch restaurants
-        const { data: restaurantsData, error: errorRestaurants } = await supabase
-          .from('restaurants')
-          .select('*');
-        
+        const { data: restaurantsData, error: errorRestaurants } = await supabase.from('restaurants').select('*');
         if (errorRestaurants) throw errorRestaurants;
         if (restaurantsData) setRestaurants(restaurantsData);
 
-        // Fetch reservations
-        const { data: reservationsData, error: errorReservations } = await supabase
-          .from('reservations')
-          .select('*');
-        
+        const { data: reservationsData, error: errorReservations } = await supabase.from('reservations').select('*');
         if (errorReservations) throw errorReservations;
         if (reservationsData) setReservations(reservationsData);
 
-        // Fetch users
-        const { data: usersData, error: errorUsers } = await supabase
-          .from('users')
-          .select('*');
-        
+        const { data: usersData, error: errorUsers } = await supabase.from('users').select('*');
         if (errorUsers) throw errorUsers;
         if (usersData) setUsers(usersData);
       } catch (err) {
         console.error('Error fetching data:', err);
       }
     };
-
     fetchData();
   }, []);
 
-  // Filter events by restaurant and format data
-  const getFilteredEvents = (restaurantFilter: string) => {
-    if (!reservations.length) return [];
-    
-    const filteredReservations = restaurantFilter === 'all'
-      ? reservations
-      : reservations.filter(res => Number(res.restaurant_id) === Number(restaurantFilter));
+  // Dynamic hours based on selected restaurant
+  const selectedRestaurant = useMemo(
+    () => (selectedValue !== 'all' ? restaurants.find(r => String(r.id) === selectedValue) : null),
+    [selectedValue, restaurants]
+  );
 
+  const HOURS = useMemo(() => {
+    if (selectedRestaurant) {
+      const startHour = parseInt(selectedRestaurant.start_time.split(':')[0]);
+      const endHour = parseInt(selectedRestaurant.end_time.split(':')[0]);
+      return Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
+    }
+    return Array.from({ length: 17 }, (_, i) => i + 6); // Default 6 AM to 10 PM
+  }, [selectedRestaurant]);
+
+  // Event filtering and formatting
+  const getFilteredEvents = useCallback((restaurantFilter: string) => {
+    if (!reservations.length) return [];
+    const filteredReservations =
+      restaurantFilter === 'all'
+        ? reservations
+        : reservations.filter(res => Number(res.restaurant_id) === Number(restaurantFilter));
     return filteredReservations.map(reservation => {
       const user = users.find(u => u.id === reservation.user_id);
       const restaurant = restaurants.find(r => Number(r.id) === Number(reservation.restaurant_id));
-      
-      // Format date
-      let dateStr = reservation.reservation_date;
-      if (dateStr.includes('T')) {
-        dateStr = dateStr.split('T')[0];
-      }
-      
-      // Create Date objects
+      const dateStr = reservation.reservation_date.split('T')[0];
       const [year, month, day] = dateStr.split('-').map(Number);
       const date = new Date(year, month - 1, day);
-
       const [startHour, startMinute] = reservation.start_time.split(':').map(Number);
       const [endHour, endMinute] = reservation.end_time.split(':').map(Number);
-      
-      const startDateTime = new Date(year, month - 1, day, startHour, startMinute);
-      const endDateTime = new Date(year, month - 1, day, endHour, endMinute);
-      
       return {
         ...reservation,
         userName: user?.name || 'Unknown',
@@ -249,37 +168,28 @@ export default function EventCalendar() {
         userPhone: user?.phone_number || 'N/A',
         userEmail: user?.email || 'N/A',
         date,
-        startDateTime,
-        endDateTime
+        startDateTime: new Date(year, month - 1, day, startHour, startMinute),
+        endDateTime: new Date(year, month - 1, day, endHour, endMinute),
       } as EventData;
     });
-  };
+  }, [reservations, users, restaurants]);
 
   // Memoized values
-  const events = useMemo(() => getFilteredEvents(selectedValue), [selectedValue, reservations, users, restaurants]);
-  
-  const eventsForSelectedDate = useMemo(() => 
-    events.filter(event => isSameDay(event.date, selectedDate)), 
+  const events = useMemo(() => getFilteredEvents(selectedValue), [selectedValue, getFilteredEvents]);
+  const eventsForSelectedDate = useMemo(
+    () => events.filter(event => isSameDay(event.date, selectedDate)),
     [events, selectedDate]
   );
-  
-  const eventsForSelectedWeek = useMemo(() => 
-    events.filter(event => isSameWeek(event.date, currentWeekStart, { weekStartsOn: 1 })), 
+  const eventsForSelectedWeek = useMemo(
+    () => events.filter(event => isSameWeek(event.date, currentWeekStart, { weekStartsOn: 1 })),
     [events, currentWeekStart]
   );
-  
   const daysWithEvents = useMemo(() => {
-    const uniqueDates = new Set<string>();
-    events.forEach(event => uniqueDates.add(format(event.date, 'yyyy-MM-dd')));
-    
-    return Array.from(uniqueDates).map(dateStr => {
-      const [year, month, day] = dateStr.split('-').map(Number);
-      return new Date(year, month - 1, day);
-    });
+    const uniqueDates = new Set(events.map(event => format(event.date, 'yyyy-MM-dd')));
+    return Array.from(uniqueDates).map(dateStr => new Date(dateStr));
   }, [events]);
-  
-  const currentWeekDays = useMemo(() => 
-    Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i)), 
+  const currentWeekDays = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i)),
     [currentWeekStart]
   );
 
@@ -289,34 +199,33 @@ export default function EventCalendar() {
   const handleRestaurantChange = (value: string) => setSelectedValue(value);
 
   // Helper functions
-  const getStatusStyle = (status: string) => {
-    const normalizedStatus = status.toLowerCase() as keyof typeof STATUS_COLORS;
-    return STATUS_COLORS[normalizedStatus] || STATUS_COLORS.default;
-  };
+  const getStatusStyle = (status: string) =>
+    STATUS_COLORS[status.toLowerCase() as keyof typeof STATUS_COLORS] || STATUS_COLORS.default;
 
   const renderStatusBadge = (status: string) => {
     const style = getStatusStyle(status);
-    return <Badge variant={style.badge as any}>{status}</Badge>;
+    const badgeVariant = style.badge as "default" | "secondary" | "destructive" | "outline";
+    
+    // Add custom class for "arrived" status
+    const className = status.toLowerCase() === 'arrived' ? 'bg-blue-500 text-white' : undefined;
+    
+    return <Badge variant={badgeVariant} className={className}>{status}</Badge>;
   };
 
-  // Render functions
+  // Render event card
   const renderEventCard = (event: EventData) => {
     const style = getStatusStyle(event.status);
-    
     return (
-      <Card 
-        key={event.reservation_id} 
-        className={cn("border-l-4 hover:shadow-md transition-shadow", style.border)}
-      >
-        <CardHeader className="pb-2 px-3 md:px-6">
+      <Card key={event.reservation_id} className={cn('border-l-4 hover:shadow-md transition-shadow', style.border)}>
+        <CardHeader className="p-4">
           <div className="flex justify-between items-start flex-wrap gap-2">
-            <CardTitle className="text-base flex items-center gap-2">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
               <User className="h-4 w-4 shrink-0" />
               <span className="truncate">{event.userName}</span>
             </CardTitle>
             {renderStatusBadge(event.status)}
           </div>
-          <CardDescription className="flex flex-wrap gap-2 md:gap-4">
+          <CardDescription className="flex flex-wrap gap-2 text-sm">
             <span className="flex items-center gap-1 min-w-[100px]">
               <Clock className="h-3 w-3 shrink-0" />
               {event.start_time.slice(0, 5)} - {event.end_time.slice(0, 5)}
@@ -328,7 +237,7 @@ export default function EventCalendar() {
             <span>Table {event.table_id}</span>
           </CardDescription>
         </CardHeader>
-        <CardContent className="pb-2 pt-0 px-3 md:px-6">
+        <CardContent className="p-4 pt-0">
           <div className="text-sm space-y-1">
             <div className="flex justify-between">
               <span className="text-muted-foreground flex items-center gap-1">
@@ -356,25 +265,25 @@ export default function EventCalendar() {
 
   return (
     <div className="space-y-4">
-      {/* Header section with filters and navigation */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-        <div className="w-full md:w-auto">
-          <Select onValueChange={handleRestaurantChange} value={selectedValue}>
-            <SelectTrigger className="w-full md:w-[220px]">
-              <SelectValue placeholder="Select Restaurant" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Restaurants</SelectItem>
-              {restaurants.map(restaurant => (
-                <SelectItem key={restaurant.id} value={String(restaurant.id)}>
-                  {restaurant.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
+        <Select onValueChange={handleRestaurantChange} value={selectedValue}>
+          <SelectTrigger className="w-full md:w-[220px]">
+            <SelectValue placeholder="Select Restaurant" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Restaurants</SelectItem>
+            {restaurants.map(restaurant => (
+              <SelectItem key={restaurant.id} value={String(restaurant.id)}>
+                {restaurant.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setSelectedDate(new Date())}>
+            Today
+          </Button>
           <Button variant="outline" size="icon" onClick={goToPreviousWeek}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -387,67 +296,56 @@ export default function EventCalendar() {
         </div>
       </div>
 
-      {/* View tabs */}
-      <Tabs value={activeView} onValueChange={(value) => setActiveView(value as 'month' | 'week' | 'day')}>
-        <div className="flex justify-end mb-4">
-          <TabsList className="grid w-full md:w-auto grid-cols-3">
-            <TabsTrigger value="month">Month</TabsTrigger>
-            <TabsTrigger value="week">Week</TabsTrigger>
-            <TabsTrigger value="day">Day</TabsTrigger>
-          </TabsList>
-        </div>
+      {/* Tabs */}
+      <Tabs value={activeView} onValueChange={value => setActiveView(value as 'month' | 'week' | 'day')}>
+        <TabsList className="grid w-full md:w-auto grid-cols-3 mb-4">
+          <TabsTrigger value="month">Month</TabsTrigger>
+          <TabsTrigger value="week">Week</TabsTrigger>
+          <TabsTrigger value="day">Day</TabsTrigger>
+        </TabsList>
 
-        {/* Month view */}
+        {/* Month View */}
         <TabsContent value="month">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-6">
-            <Card className="w-full md:col-span-1 mx-auto md:mx-0 mb-6 md:mb-0">
-              <CardHeader className="px-3 md:px-6">
-                <CardTitle className="flex items-center gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="w-full">
+              <CardHeader className="p-4">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <CalendarIcon className="h-5 w-5 shrink-0" />
                   Calendar
                 </CardTitle>
-                <CardDescription>Select a date to view reservations</CardDescription>
+                <CardDescription className="text-sm">Select a date to view reservations</CardDescription>
               </CardHeader>
-              <CardContent className="px-2 md:px-6">
-                <div className="flex justify-center">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={date => date && setSelectedDate(date)}
-                    modifiers={{ hasEvent: daysWithEvents }}
-                    modifiersStyles={{
-                      hasEvent: { 
-                        fontWeight: 'bold',
-                        backgroundColor: 'hsl(var(--primary) / 0.1)',
-                        color: 'hsl(var(--primary))'
-                      }
-                    }}
-                    className="rounded-md"
-                  />
-                </div>
+              <CardContent className="p-4">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={date => date && setSelectedDate(date)}
+                  modifiers={{ hasEvent: daysWithEvents }}
+                  modifiersStyles={{
+                    hasEvent: { fontWeight: 'bold', backgroundColor: 'hsl(var(--primary) / 0.1)', color: 'hsl(var(--primary))' },
+                  }}
+                  className="rounded-md w-full"
+                />
               </CardContent>
             </Card>
-
             <Card className="md:col-span-2">
-              <CardHeader className="px-3 md:px-6">
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="p-4">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <CalendarIcon className="h-5 w-5 shrink-0" />
                   Reservations {eventsForSelectedDate.length > 0 && `(${eventsForSelectedDate.length})`}
                 </CardTitle>
-                <CardDescription className="flex items-center gap-1">
+                <CardDescription className="text-sm flex items-center gap-1">
                   <Clock className="h-4 w-4 shrink-0" />
                   {format(selectedDate, isMobile ? 'PP' : 'PPPP')}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="px-2 md:px-6">
+              <CardContent className="p-4">
                 {eventsForSelectedDate.length > 0 ? (
-                  <ScrollArea className="h-[300px] sm:h-[400px] pr-4">
-                    <div className="space-y-4">
-                      {eventsForSelectedDate.map(renderEventCard)}
-                    </div>
+                  <ScrollArea className="h-[400px] pr-4">
+                    <div className="space-y-4">{eventsForSelectedDate.map(renderEventCard)}</div>
                   </ScrollArea>
                 ) : (
-                  <div className="py-12 md:py-16 text-center text-muted-foreground">
+                  <div className="py-16 text-center text-muted-foreground">
                     <CalendarIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
                     <p>No reservations for this date</p>
                   </div>
@@ -457,12 +355,12 @@ export default function EventCalendar() {
           </div>
         </TabsContent>
 
-        {/* Week view */}
+        {/* Week View */}
         <TabsContent value="week">
-          <Card className="overflow-hidden border">
-            <CardHeader className="px-3 md:px-6">
+          <Card>
+            <CardHeader className="p-4">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <CalendarIcon className="h-5 w-5 shrink-0" />
                   Week of {format(currentWeekStart, isMobile ? 'PP' : 'PPPP')}
                 </CardTitle>
@@ -475,22 +373,21 @@ export default function EventCalendar() {
                   </Button>
                 </div>
               </div>
-              <CardDescription className="flex items-center gap-2 mt-2">
+              <CardDescription className="text-sm flex items-center gap-2 mt-2">
                 <Clock className="h-4 w-4 shrink-0" />
                 {eventsForSelectedWeek.length} reservations this week
               </CardDescription>
               <Separator className="mt-4" />
             </CardHeader>
             <CardContent className="p-0">
-              {/* Week header */}
               <div className="grid grid-cols-7 border-b">
                 {currentWeekDays.map((day, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className={cn(
-                      "p-2 text-center border-r last:border-r-0 cursor-pointer hover:bg-muted/50 transition-colors",
-                      isSameDay(day, new Date()) ? "bg-muted font-bold" : "",
-                      isSameDay(day, selectedDate) ? "bg-primary/10" : ""
+                      'p-2 text-center border-r last:border-r-0 cursor-pointer hover:bg-muted/50 transition-colors',
+                      isSameDay(day, new Date()) && 'bg-muted font-bold',
+                      isSameDay(day, selectedDate) && 'bg-primary/10'
                     )}
                     onClick={() => setSelectedDate(day)}
                   >
@@ -499,11 +396,9 @@ export default function EventCalendar() {
                   </div>
                 ))}
               </div>
-              
-              {/* Week timeline */}
-              <div className="relative" style={{ height: isMobile ? '500px' : '600px', overflow: 'hidden' }}>
+              <div className="relative h-[calc(100vh-200px)]">
                 <ScrollArea className="h-full">
-                  <div className="relative min-w-[400px] min-h-full">
+                  <div className="relative min-h-full">
                     <div className="sticky left-0 w-[60px] h-full border-r bg-background z-10 float-left">
                       {HOURS.map(hour => (
                         <div key={hour} className="h-20 border-b relative">
@@ -513,131 +408,115 @@ export default function EventCalendar() {
                         </div>
                       ))}
                     </div>
-                    
-                    <div className="ml-[60px] grid grid-cols-7 bg-muted/5">
-                      {currentWeekDays.map((day, dayIndex) => (
-                        <div 
-                          key={dayIndex} 
-                          className={cn(
-                            "relative border-r last:border-r-0",
-                            isSameDay(day, new Date()) ? "bg-muted/20" : ""
-                          )}
-                          onClick={() => setSelectedDate(day)}
-                        >
-                          {HOURS.map(hour => (
-                            <div key={hour} className="h-20 border-b relative"></div>
-                          ))}
-                          
-                          {/* Events for this day */}
-                          <TooltipProvider delayDuration={isMobile ? 0 : 300}>
-                            {(() => {
-                              // Group events by overlapping time periods
-                              const eventsForDay = eventsForSelectedWeek.filter(event => isSameDay(event.date, day));
-                              const groupedEvents = groupOverlappingEvents(eventsForDay);
-                              
-                              return groupedEvents.map(group => 
-                                group.map((event, indexInGroup) => {
-                                  const startHour = event.startDateTime.getHours();
-                                  const startMinute = event.startDateTime.getMinutes();
-                                  const endHour = event.endDateTime.getHours();
-                                  const endMinute = event.endDateTime.getMinutes();
-                                  
-                                  const hourHeight = 80; // Each cell is h-20 (80px in Tailwind)
-                                  const top = (startHour - 6) * hourHeight + (startMinute / 60) * hourHeight;
-                                  const height = ((endHour - startHour) * 60 + (endMinute - startMinute)) / 60 * hourHeight;
-                                  const style = getStatusStyle(event.status);
-                                  
-                                  // Calculate width and left offset based on group size
-                                  const groupSize = group.length;
-                                  const width = `calc((100% - 8px) / ${groupSize})`;
-                                  const leftOffset = `calc(4px + (${indexInGroup} * (100% - 8px) / ${groupSize}))`;
-                                  
-                                  return (
-                                    <Tooltip key={event.reservation_id}>
-                                      <TooltipTrigger asChild>
-                                        <div
-                                          className={cn(
-                                            "absolute rounded-md overflow-hidden cursor-pointer",
-                                            isMobile ? "px-1 py-1" : "px-2 py-1",
-                                            style.bg, style.textColor,
-                                            `border ${style.border}`
-                                          )}
-                                          style={{
-                                            top: `${top}px`,
-                                            height: `${Math.max(height, 30)}px`,
-                                            left: 'auto', // Override left
-                                            right: 'auto', // Override right
-                                            width: width,
-                                            transform: `translateX(${leftOffset})`,
-                                            zIndex: 10,
-                                          }}
-                                        >
-                                          <div className="font-medium truncate text-[11px]">{event.userName}</div>
-                                          {height >= 30 && (
-                                            <div className="truncate text-[9px]">
-                                              T{event.table_id} • {event.guest_count} p
-                                            </div>
-                                          )}
-                                        </div>
-                                      </TooltipTrigger>
-                                      <TooltipContent side={isMobile ? "bottom" : "right"} sideOffset={5}>
-                                        <div className="font-medium">{event.userName}</div>
-                                        <div className="text-xs">{format(event.date, 'PP')}</div>
-                                        <div className="text-xs">{event.start_time.slice(0, 5)} - {event.end_time.slice(0, 5)}</div>
-                                        <div className="text-xs">{event.restaurantName} • Table {event.table_id}</div>
-                                        <div className="text-xs">{event.guest_count} guests • {event.status}</div>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  );
-                                })
-                              ).flat();
-                            })()}
-                          </TooltipProvider>
-                        </div>
-                      ))}
+                    <div className={cn('ml-[60px]', isMobile && 'overflow-x-auto')}>
+                      <div className="grid grid-cols-7 bg-muted/5" style={isMobile ? { minWidth: '700px' } : {}}>
+                        {currentWeekDays.map((day, dayIndex) => {
+                          const startHourOffset = selectedRestaurant
+                            ? parseInt(selectedRestaurant.start_time.split(':')[0])
+                            : 6;
+                          return (
+                            <div
+                              key={dayIndex}
+                              className={cn('relative border-r last:border-r-0', isSameDay(day, new Date()) && 'bg-muted/20')}
+                              onClick={() => setSelectedDate(day)}
+                            >
+                              {HOURS.map(hour => (
+                                <div key={hour} className="h-20 border-b relative" />
+                              ))}
+                              <TooltipProvider delayDuration={isMobile ? 0 : 300}>
+                                {(() => {
+                                  const eventsForDay = eventsForSelectedWeek.filter(event => isSameDay(event.date, day));
+                                  const groupedEvents = groupOverlappingEvents(eventsForDay);
+                                  const hourHeight = 80;
+                                  return groupedEvents
+                                    .map(group =>
+                                      group.map((event, indexInGroup) => {
+                                        const startHour = event.startDateTime.getHours();
+                                        const startMinute = event.startDateTime.getMinutes();
+                                        const endHour = event.endDateTime.getHours();
+                                        const endMinute = event.endDateTime.getMinutes();
+                                        const top = (startHour - startHourOffset) * hourHeight + (startMinute / 60) * hourHeight;
+                                        const height = ((endHour - startHour) * 60 + (endMinute - startMinute)) / 60 * hourHeight;
+                                        const style = getStatusStyle(event.status);
+                                        const groupSize = group.length;
+                                        const width = `calc((100% - 8px) / ${groupSize})`;
+                                        const leftOffset = `calc(4px + (${indexInGroup} * (100% - 8px) / ${groupSize}))`;
+                                        return (
+                                          <Tooltip key={event.reservation_id}>
+                                            <TooltipTrigger asChild>
+                                              <div
+                                                className={cn(
+                                                  'absolute rounded-md overflow-hidden cursor-pointer px-2 py-1',
+                                                  style.bg,
+                                                  style.textColor,
+                                                  `border ${style.border}`
+                                                )}
+                                                style={{
+                                                  top: `${top}px`,
+                                                  height: `${Math.max(height, 30)}px`,
+                                                  width,
+                                                  transform: `translateX(${leftOffset})`,
+                                                  zIndex: 10,
+                                                }}
+                                              >
+                                                <div className="font-medium truncate text-xs sm:text-sm">{event.userName}</div>
+                                                {height >= 30 && (
+                                                  <div className="truncate text-[10px] sm:text-xs">
+                                                    T{event.table_id} • {event.guest_count} p
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </TooltipTrigger>
+                                            <TooltipContent side={isMobile ? 'bottom' : 'right'} sideOffset={5}>
+                                              <div className="font-medium">{event.userName}</div>
+                                              <div className="text-xs">{format(event.date, 'PP')}</div>
+                                              <div className="text-xs">
+                                                {event.start_time.slice(0, 5)} - {event.end_time.slice(0, 5)}
+                                              </div>
+                                              <div className="text-xs">
+                                                {event.restaurantName} • Table {event.table_id}
+                                              </div>
+                                              <div className="text-xs">
+                                                {event.guest_count} guests • {event.status}
+                                              </div>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        );
+                                      })
+                                    )
+                                    .flat();
+                                })()}
+                              </TooltipProvider>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </ScrollArea>
               </div>
-            </CardContent>
-            {/* Add legend */}
-            <div className="p-4 border-t mt-2">
-              <div className="flex flex-wrap gap-3 justify-center">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-orange-200 border border-orange-400"></div>
-                  <span className="text-xs">Pending</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-sky-200 border border-sky-400"></div>
-                  <span className="text-xs">Deposited</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-yellow-200 border border-yellow-400"></div>
-                  <span className="text-xs">Waiting payment</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-green-200 border border-green-400"></div>
-                  <span className="text-xs">Confirmed</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-red-200 border border-red-400"></div>
-                  <span className="text-xs">Cancelled</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-lime-200 border border-lime-400"></div>
-                  <span className="text-xs">Completed</span>
+              <div className="p-4 border-t">
+                <div className="flex flex-wrap gap-3 justify-center">
+                  {Object.entries(STATUS_COLORS)
+                    .filter(([status]) => status !== 'default')
+                    .map(([status, style]) => (
+                      <div key={status} className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-sm ${style.bg} border ${style.border}`} />
+                        <span className="text-xs capitalize">{status}</span>
+                      </div>
+                    ))}
                 </div>
               </div>
-            </div>
+            </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Day view */}
+        {/* Day View */}
         <TabsContent value="day">
-          <Card className="overflow-hidden">
-            <CardHeader className="px-3 md:px-6">
+          <Card>
+            <CardHeader className="p-4">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <CalendarIcon className="h-5 w-5 shrink-0" />
                   {format(selectedDate, isMobile ? 'PP' : 'PPPP')}
                 </CardTitle>
@@ -650,16 +529,16 @@ export default function EventCalendar() {
                   </Button>
                 </div>
               </div>
-              <CardDescription className="flex items-center gap-2 mt-2">
+              <CardDescription className="text-sm flex items-center gap-2 mt-2">
                 <Clock className="h-4 w-4 shrink-0" />
                 {eventsForSelectedDate.length} reservations
               </CardDescription>
               <Separator className="mt-4" />
             </CardHeader>
             <CardContent className="p-0">
-              <div className="relative" style={{ height: isMobile ? '500px' : '600px', overflow: 'hidden' }}>
+              <div className="relative h-[calc(100vh-200px)]">
                 <ScrollArea className="h-full">
-                  <div className="relative min-w-[300px] min-h-full">
+                  <div className="relative min-h-full">
                     <div className="sticky left-0 w-[60px] h-full border-r bg-background z-10 float-left">
                       {HOURS.map(hour => (
                         <div key={hour} className="h-20 border-b relative">
@@ -669,39 +548,36 @@ export default function EventCalendar() {
                         </div>
                       ))}
                     </div>
-                    
                     <div className="ml-[60px]">
                       <div className="relative w-full">
                         {HOURS.map(hour => (
-                          <div key={hour} className="h-20 border-b relative"></div>
+                          <div key={hour} className="h-20 border-b relative" />
                         ))}
-                        
-                        {/* Events for this day */}
                         {eventsForSelectedDate.length > 0 ? (
                           eventsForSelectedDate.map(event => {
                             const startHour = event.startDateTime.getHours();
                             const startMinute = event.startDateTime.getMinutes();
                             const endHour = event.endDateTime.getHours();
                             const endMinute = event.endDateTime.getMinutes();
-                            
-                            // Calculate position - fixed calculation to match the h-20 cell height
-                            const hourHeight = 80; // Each cell is h-20 (80px in Tailwind)
-                            const top = (startHour - 6) * hourHeight + (startMinute / 60) * hourHeight;
+                            const startHourOffset = selectedRestaurant
+                              ? parseInt(selectedRestaurant.start_time.split(':')[0])
+                              : 6;
+                            const hourHeight = 80;
+                            const top = (startHour - startHourOffset) * hourHeight + (startMinute / 60) * hourHeight;
                             const height = ((endHour - startHour) * 60 + (endMinute - startMinute)) / 60 * hourHeight;
                             const style = getStatusStyle(event.status);
-                            
                             return (
                               <div
                                 key={event.reservation_id}
                                 className={cn(
-                                  "absolute rounded-md text-sm",
-                                  isMobile ? "px-2 py-1" : "px-3 py-2", // Reduced padding on mobile
-                                  style.bg, style.textColor,
+                                  'absolute rounded-md text-sm px-3 py-2',
+                                  style.bg,
+                                  style.textColor,
                                   `border ${style.border}`
                                 )}
                                 style={{
                                   top: `${top}px`,
-                                  height: `${Math.max(height, 40)}px`, // Minimum height for mobile
+                                  height: `${Math.max(height, 40)}px`,
                                   left: '8px',
                                   right: '8px',
                                   zIndex: 10,
@@ -740,36 +616,19 @@ export default function EventCalendar() {
                   </div>
                 </ScrollArea>
               </div>
-            </CardContent>
-            {/* Add legend */}
-            <div className="p-4 border-t mt-2">
-              <div className="flex flex-wrap gap-3 justify-center">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-orange-200 border border-orange-400"></div>
-                  <span className="text-xs">Pending</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-sky-200 border border-sky-400"></div>
-                  <span className="text-xs">Deposited</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-yellow-200 border border-yellow-400"></div>
-                  <span className="text-xs">Waiting payment</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-green-200 border border-green-400"></div>
-                  <span className="text-xs">Confirmed</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-red-200 border border-red-400"></div>
-                  <span className="text-xs">Cancelled</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-lime-200 border border-lime-400"></div>
-                  <span className="text-xs">Completed</span>
+              <div className="p-4 border-t">
+                <div className="flex flex-wrap gap-3 justify-center">
+                  {Object.entries(STATUS_COLORS)
+                    .filter(([status]) => status !== 'default')
+                    .map(([status, style]) => (
+                      <div key={status} className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-sm ${style.bg} border ${style.border}`} />
+                        <span className="text-xs capitalize">{status}</span>
+                      </div>
+                    ))}
                 </div>
               </div>
-            </div>
+            </CardContent>
           </Card>
         </TabsContent>
       </Tabs>

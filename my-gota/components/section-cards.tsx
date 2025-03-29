@@ -58,28 +58,28 @@ export function SectionCards() {
         const now = new Date('2025-03-29T00:00:00Z') // Reference date from the data
         
         // Calculate date ranges based on timeRange
-        let currentStartDate = new Date(now)
-        let previousStartDate = new Date(now)
+        const startDate = new Date(now)
+        const previousStartDate = new Date(now)
         
         if (timeRange === '7d') {
-          currentStartDate.setDate(now.getDate() - 7)
+          startDate.setDate(now.getDate() - 7)
           previousStartDate.setDate(now.getDate() - 14)
         } else if (timeRange === '30d') {
-          currentStartDate.setDate(now.getDate() - 30)
+          startDate.setDate(now.getDate() - 30)
           previousStartDate.setDate(now.getDate() - 60)
         } else { // 90d (3 months)
-          currentStartDate.setMonth(now.getMonth() - 3)
+          startDate.setMonth(now.getMonth() - 3)
           previousStartDate.setMonth(now.getMonth() - 6)
         }
         
         // Filter reservations for current period
         const currentPeriodReservations = jsonData.reservations.filter(res => {
           const resDate = new Date(res.created_at)
-          return resDate >= currentStartDate && resDate <= now
+          return resDate >= startDate && resDate <= now
         })
         
         // Filter reservations for previous period
-        const previousEndDate = new Date(currentStartDate)
+        const previousEndDate = new Date(startDate)
         previousEndDate.setDate(previousEndDate.getDate() - 1)
         
         const previousPeriodReservations = jsonData.reservations.filter(res => {

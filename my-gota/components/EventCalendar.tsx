@@ -4,7 +4,7 @@ import { ScheduleXCalendar, useNextCalendarApp } from "@schedule-x/react";
 import { createViewDay, createViewMonthAgenda, createViewMonthGrid, createViewWeek } from "@schedule-x/calendar";
 import '@schedule-x/theme-shadcn/dist/index.css';
 import reservationData from '@/app/dashboard/data.json';
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { 
   Select, 
   SelectContent, 
@@ -12,8 +12,6 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Badge } from "@/components/ui/badge";
 
 // Define types based on the actual data structure
 interface Reservation {
@@ -37,6 +35,14 @@ interface Restaurant {
   end_time: string;
   created_at: string;
   updated_at: string;
+}
+
+// Event data type with additional properties
+interface EventData extends Reservation {
+  userName: string;
+  restaurantName: string;
+  userPhone: string;
+  userEmail: string;
 }
 
 export default function EventCalendar() {
@@ -90,7 +96,7 @@ export default function EventCalendar() {
           restaurantName,
           userPhone: user?.phone_number || 'N/A',
           userEmail: user?.email || 'N/A'
-        }
+        } as EventData
       };
     });
   }, [filteredReservations, restaurants]);
@@ -135,6 +141,8 @@ export default function EventCalendar() {
         // Show a popover with reservation details when an event is clicked
         const targetElement = document.querySelector(`[data-event-id="${event.id}"]`);
         if (targetElement) {
+          const eventData = event.data as EventData;
+          
           const popover = document.createElement('div');
           popover.className = 'event-popover';
           popover.style.position = 'absolute';
@@ -162,15 +170,15 @@ export default function EventCalendar() {
           
           const title = document.createElement('h4');
           title.className = 'font-medium text-sm';
-          title.textContent = event.title;
+          title.textContent = event.title || '';
           
           const badge = document.createElement('span');
           badge.className = `inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${
-            event.data.status === 'Confirmed' ? 'bg-primary text-primary-foreground' :
-            event.data.status === 'Pending' ? 'bg-secondary text-secondary-foreground' :
+            eventData.status === 'Confirmed' ? 'bg-primary text-primary-foreground' :
+            eventData.status === 'Pending' ? 'bg-secondary text-secondary-foreground' :
             'border-transparent text-foreground'
           }`;
-          badge.textContent = event.data.status;
+          badge.textContent = eventData.status;
           
           header.appendChild(title);
           header.appendChild(badge);
@@ -181,13 +189,13 @@ export default function EventCalendar() {
           details.className = 'grid gap-1.5 text-sm';
           
           const detailItems = [
-            { label: 'Restaurant', value: event.data.restaurantName || 'Unknown' },
-            { label: 'Table', value: event.data.table_id || 'Unknown' },
-            { label: 'Guests', value: event.data.guest_count || 'Unknown' },
-            { label: 'Date', value: event.data.reservation_date || 'Unknown' },
-            { label: 'Time', value: `${event.data.start_time?.slice(0, 5) || 'Unknown'} - ${event.data.end_time?.slice(0, 5) || 'Unknown'}` },
-            { label: 'Contact', value: event.data.userPhone || 'Unknown' },
-            { label: 'Email', value: event.data.userEmail || 'Unknown' }
+            { label: 'Restaurant', value: eventData.restaurantName },
+            { label: 'Table', value: String(eventData.table_id) },
+            { label: 'Guests', value: String(eventData.guest_count) },
+            { label: 'Date', value: eventData.reservation_date },
+            { label: 'Time', value: `${eventData.start_time.slice(0, 5)} - ${eventData.end_time.slice(0, 5)}` },
+            { label: 'Contact', value: eventData.userPhone },
+            { label: 'Email', value: eventData.userEmail }
           ];
           
           detailItems.forEach(item => {
@@ -207,7 +215,7 @@ export default function EventCalendar() {
           });
           
           // Add notes if present
-          if (event.data.notes) {
+          if (eventData.notes !== null && eventData.notes !== undefined) {
             const notesContainer = document.createElement('div');
             notesContainer.className = 'border-t pt-2 mt-2';
             
@@ -217,7 +225,7 @@ export default function EventCalendar() {
             
             const notes = document.createElement('p');
             notes.className = 'mt-1';
-            notes.textContent = event.data.notes || '';
+            notes.textContent = eventData.notes!;
             
             notesContainer.appendChild(notesLabel);
             notesContainer.appendChild(notes);

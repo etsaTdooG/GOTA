@@ -204,8 +204,8 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     header: "Status",
     cell: ({ row }) => {
       const status = row.original.status;
-      let badgeVariant = "outline";
-      let badgeClass = "text-muted-foreground";
+      let badgeVariant: "default" | "secondary" | "destructive" | "outline" = "default";
+      let badgeClass = "";
       
       // Customize badge styles based on status
       if (status === "Active") {
@@ -220,7 +220,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       }
       
       return (
-        <Badge variant={badgeVariant as any} className={badgeClass}>
+        <Badge variant={badgeVariant} className={badgeClass}>
           {status}
         </Badge>
       );
@@ -597,128 +597,131 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
   const [chartData, setChartData] = React.useState<Array<{month: string, desktop: number, mobile: number}>>([])
   const [trendingValue, setTrendingValue] = React.useState<number>(0)
   const [isDataLoaded, setIsDataLoaded] = React.useState(false)
+  const isOpen = true // Always open in this component
   
-  React.useEffect(() => {
-    // Import data directly without fetching
-    const loadReservationsData = async () => {
-      try {
-        // Instead of fetching remotely, import the data directly
-        const data = await import("@/app/dashboard/data.json").then(module => module.default);
-        
-        console.log(`User ${item.name} (${item.id}) - Loading data...`);
-        
-        // Get reservations for this user
-        const userReservations = data.reservations.filter(
-          (res) => res.user_id === item.id
-        );
-        
-        console.log(`Found ${userReservations.length} reservations for user ${item.name}`);
-        
-        if (userReservations.length === 0) {
-          // If no reservations found, create minimal empty data
-          setChartData([]);
-          setTrendingValue(0);
-          setIsDataLoaded(true);
-          return;
-        }
-        
-        // Find the actual date range from the data
-        // The reference date is March 29, 2025
-        const referenceDate = new Date('2025-03-29T00:00:00Z');
-        
-        // Get all unique months from the reservations data
-        const allMonths = userReservations.map(res => {
-          const date = new Date(res.created_at);
-          return `${date.getFullYear()}-${date.getMonth()}`;
-        });
-        
-        // Get unique months (remove duplicates)
-        const uniqueMonths = [...new Set(allMonths)];
-        
-        // Sort months chronologically
-        uniqueMonths.sort();
-        
-        // Get the last 6 months of data or all if less than 6
-        let monthsToUse = uniqueMonths;
-        if (uniqueMonths.length > 6) {
-          monthsToUse = uniqueMonths.slice(-6); // Get the last 6 months
-        }
-        
-        // Generate chart data based on these actual months
-        const newChartData = monthsToUse.map(monthKey => {
-          const [year, month] = monthKey.split('-').map(Number);
-          
-          // Create date objects for first and last day of month
-          const firstDay = new Date(year, month, 1);
-          const lastDay = new Date(year, month + 1, 0);
-          
-          // Month name for display
-          const monthName = firstDay.toLocaleString('default', { month: 'long', year: 'numeric' });
-          
-          // Filter reservations for this month
-          const monthReservations = userReservations.filter(res => {
-            const resDate = new Date(res.created_at);
-            return resDate >= firstDay && resDate <= lastDay;
-          });
-          
-          // Count of reservations for the month
-          const activityCount = monthReservations.length;
-          
-          // Sum of guests for the month
-          const guestCount = monthReservations.reduce((sum, res) => 
-            sum + res.guest_count, 0);
-          
-          console.log(`${item.name} - ${monthName}: ${activityCount} reservations, ${guestCount} guests`);
-            
-          return {
-            month: monthName,
-            desktop: activityCount, // Activity count
-            mobile: guestCount      // Guest count
-          };
-        });
-        
-        setChartData(newChartData);
-        
-        // Calculate trending percentage
-        if (newChartData.length >= 2) {
-          const currentMonth = {
-            activity: newChartData[newChartData.length - 1].desktop,
-            guests: newChartData[newChartData.length - 1].mobile
-          };
-          
-          const prevMonth = {
-            activity: newChartData[newChartData.length - 2].desktop,
-            guests: newChartData[newChartData.length - 2].mobile
-          };
-          
-          // Use combined metric for trend
-          const currentTotal = currentMonth.activity + currentMonth.guests * 0.5;
-          const prevTotal = prevMonth.activity + prevMonth.guests * 0.5;
-          
-          if (prevTotal === 0) {
-            // Avoid division by zero
-            setTrendingValue(currentTotal > 0 ? 100 : 0);
-          } else {
-            const percentChange = ((currentTotal - prevTotal) / prevTotal) * 100;
-            setTrendingValue(Number(percentChange.toFixed(1)));
-          }
-          
-          console.log(`Trend for ${item.name}: ${currentTotal} vs ${prevTotal} = ${trendingValue}%`);
-        }
-        
-        setIsDataLoaded(true);
-      } catch (error) {
-        console.error("Error loading reservation data:", error);
-        
-        // Just show empty data instead of fake data
+  // Use React.useCallback to memoize the function
+  const loadReservationsData = React.useCallback(async () => {
+    try {
+      const reservationsData = await import("@/app/dashboard/data.json").then(module => module.default);
+      
+      console.log(`User ${item.name} (${item.id}) - Loading data...`);
+      
+      // Get reservations for this user
+      const userReservations = reservationsData.reservations.filter(
+        (res) => res.user_id === item.id
+      );
+  
+      if (userReservations.length === 0) {
         setChartData([]);
         setTrendingValue(0);
         setIsDataLoaded(true);
+        return;
       }
+      
+      // Get all unique months from the reservations data
+      const allMonths = userReservations.map(res => {
+        const date = new Date(res.created_at);
+        return `${date.getFullYear()}-${date.getMonth()}`;
+      });
+      
+      // Get unique months (remove duplicates)
+      const uniqueMonths = [...new Set(allMonths)];
+      
+      // Sort months chronologically
+      uniqueMonths.sort();
+      
+      // Get the last 6 months of data or all if less than 6
+      let monthsToUse = uniqueMonths;
+      if (uniqueMonths.length > 6) {
+        monthsToUse = uniqueMonths.slice(-6); // Get the last 6 months
+      }
+      
+      // Generate chart data based on these actual months
+      const newChartData = monthsToUse.map(monthKey => {
+        const [year, month] = monthKey.split('-').map(Number);
+        
+        // Create date objects for first and last day of month
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        
+        // Month name for display
+        const monthName = firstDay.toLocaleString('default', { month: 'long', year: 'numeric' });
+        
+        // Filter reservations for this month
+        const monthReservations = userReservations.filter(res => {
+          const resDate = new Date(res.created_at);
+          return resDate >= firstDay && resDate <= lastDay;
+        });
+        
+        // Count of reservations for the month
+        const activityCount = monthReservations.length;
+        
+        // Sum of guests for the month
+        const guestCount = monthReservations.reduce((sum, res) => 
+          sum + res.guest_count, 0);
+        
+        console.log(`${item.name} - ${monthName}: ${activityCount} reservations, ${guestCount} guests`);
+          
+        return {
+          month: monthName,
+          desktop: activityCount, // Activity count
+          mobile: guestCount      // Guest count
+        };
+      });
+      
+      setChartData(newChartData);
+      
+      // Calculate trending percentage
+      if (newChartData.length >= 2) {
+        const currentMonth = {
+          activity: newChartData[newChartData.length - 1].desktop,
+          guests: newChartData[newChartData.length - 1].mobile
+        };
+        
+        const prevMonth = {
+          activity: newChartData[newChartData.length - 2].desktop,
+          guests: newChartData[newChartData.length - 2].mobile
+        };
+        
+        // Use combined metric for trend
+        const currentTotal = currentMonth.activity + currentMonth.guests * 0.5;
+        const prevTotal = prevMonth.activity + prevMonth.guests * 0.5;
+        
+        if (prevTotal === 0) {
+          // Avoid division by zero
+          setTrendingValue(currentTotal > 0 ? 100 : 0);
+        } else {
+          const percentChange = ((currentTotal - prevTotal) / prevTotal) * 100;
+          setTrendingValue(Number(percentChange.toFixed(1)));
+        }
+        
+        console.log(`Trend for ${item.name}: ${currentTotal} vs ${prevTotal} = ${trendingValue}%`);
+      }
+      
+      setIsDataLoaded(true);
+    } catch (error) {
+      console.error("Error loading reservation data:", error);
+      
+      // Just show empty data instead of fake data
+      setChartData([]);
+      setTrendingValue(0);
+      setIsDataLoaded(true);
+    }
+  }, [item, setTrendingValue, trendingValue]); // Add trendingValue to dependencies
+  
+  // React hook for dynamic data loading
+  React.useEffect(() => {
+    const loadReservations = async () => {
+      if (!isOpen) {
+        // No need to load data if the drawer is closed
+        return;
+      }
+      
+      await loadReservationsData();
     };
     
-    loadReservationsData();
-  }, [item.id, item.name]);
+    loadReservations();
+  }, [isOpen, loadReservationsData]); // Dependencies include loadReservationsData
 
   return (
     <Drawer direction={isMobile ? "bottom" : "right"}>

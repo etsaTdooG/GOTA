@@ -29,6 +29,7 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@/components/ui/toggle-group"
+import { useTimeRange } from "@/components/time-range-context"
 
 import data from "@/app/dashboard/data.json"
 
@@ -54,14 +55,14 @@ const chartConfig = {
 
 export function ChartAreaInteractive() {
   const isMobile = useIsMobile()
-  const [timeRange, setTimeRange] = React.useState("90d")
+  const { timeRange, setTimeRange, getTimeRangeText } = useTimeRange()
   const [activeUsers, setActiveUsers] = React.useState(0)
 
   React.useEffect(() => {
     if (isMobile) {
       setTimeRange("7d")
     }
-  }, [isMobile])
+  }, [isMobile, setTimeRange])
 
   // Process the data for chart
   const processedData = React.useMemo(() => {
@@ -97,7 +98,8 @@ export function ChartAreaInteractive() {
   const filteredData = React.useMemo(() => {
     return processedData.filter((item) => {
       const date = new Date(item.date)
-      const referenceDate = new Date() // Lấy mốc thời gian hiện tại
+      // Use a fixed reference date from the data
+      const referenceDate = new Date('2025-03-29T00:00:00Z')
       let daysToSubtract = 90
       if (timeRange === "30d") {
         daysToSubtract = 30
@@ -121,28 +123,15 @@ export function ChartAreaInteractive() {
     setActiveUsers(uniqueUsers.size)
   }, [filteredData])
 
-  // Get description text based on selected time range
-  const getDescriptionText = () => {
-    switch(timeRange) {
-      case "7d":
-        return "Last 7 days"
-      case "30d":
-        return "Last 30 days"
-      case "90d":
-      default:
-        return "Last 3 months"
-    }
-  }
-
   return (
     <Card className="@container/card">
       <CardHeader>
         <CardTitle>Total Visitors</CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block">
-            {`${getDescriptionText()} (${activeUsers} active users)`}
+            {`${getTimeRangeText()} (${activeUsers} active users)`}
           </span>
-          <span className="@[540px]/card:hidden">{getDescriptionText()}</span>
+          <span className="@[540px]/card:hidden">{getTimeRangeText()}</span>
         </CardDescription>
         <CardAction>
           <ToggleGroup

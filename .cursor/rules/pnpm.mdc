@@ -1,9 +1,0 @@
----
-description: 
-globs: 
-alwaysApply: true
----
-
-# Your rule content
-
-- You can use pnpm instead npx or npm

@@ -4,7 +4,7 @@ import { ScheduleXCalendar, useNextCalendarApp } from "@schedule-x/react";
 import { createViewDay, createViewMonthAgenda, createViewMonthGrid, createViewWeek } from "@schedule-x/calendar";
 import '@schedule-x/theme-shadcn/dist/index.css';
 import reservationData from '@/app/dashboard/data.json';
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { 
   Select, 
   SelectContent, 
@@ -46,7 +46,9 @@ interface EventData extends Reservation {
 }
 
 export default function EventCalendar() {
-  const [selectedRestaurant, setSelectedRestaurant] = useState<number | null>(null);
+  // State to control component rendering
+  const [calendarKey, setCalendarKey] = useState(0);
+  const [selectedValue, setSelectedValue] = useState<string>("all");
   const calendarRef = useRef<HTMLDivElement>(null);
   
   // Extract restaurants from data
@@ -54,31 +56,21 @@ export default function EventCalendar() {
     return reservationData.restaurants as Restaurant[];
   }, []);
   
-  // Get filtered reservations based on selected restaurant
-  const filteredReservations = useMemo(() => {
+  // Function to get events based on selected restaurant
+  const getFilteredEvents = (restaurantFilter: string) => {
     const allReservations = reservationData.reservations as Reservation[];
-    if (!selectedRestaurant) return allReservations;
     
-    return allReservations.filter(
-      reservation => reservation.restaurant_id === selectedRestaurant
-    );
-  }, [selectedRestaurant]);
-  
-  // Get selected restaurant details (for time slot configuration)
-  const selectedRestaurantDetails = useMemo(() => {
-    if (!selectedRestaurant) return null;
-    return restaurants.find(r => r.id === selectedRestaurant);
-  }, [selectedRestaurant, restaurants]);
-  
-  // Transform reservation data into calendar events
-  const calendarEvents = useMemo(() => {
-    return filteredReservations.map((reservation) => {
-      // Extract user info based on user_id
+    // Filter reservations by restaurant ID
+    const filteredReservations = restaurantFilter === "all" 
+      ? allReservations 
+      : allReservations.filter(res => res.restaurant_id === parseInt(restaurantFilter, 10));
+    
+    // Transform filtered reservations to calendar events
+    return filteredReservations.map(reservation => {
       const user = reservationData.users.find(user => user.id === reservation.user_id);
-      const userName = user ? user.name : 'Unknown';
-      
-      // Find restaurant info
       const restaurant = restaurants.find(r => r.id === reservation.restaurant_id);
+      
+      const userName = user ? user.name : 'Unknown';
       const restaurantName = restaurant ? restaurant.name : 'Unknown Restaurant';
       
       return {
@@ -89,7 +81,6 @@ export default function EventCalendar() {
         end: `${reservation.reservation_date} ${reservation.end_time.slice(0, 5)}`,
         calendarId: 'reservations',
         location: `${restaurantName} - Table ${reservation.table_id}`,
-        // Add all data to be available for popover
         data: {
           ...reservation,
           userName,
@@ -99,21 +90,38 @@ export default function EventCalendar() {
         } as EventData
       };
     });
-  }, [filteredReservations, restaurants]);
+  };
   
-  // Get time range for the day view based on restaurant hours
-  const dayBoundary = useMemo(() => {
-    if (!selectedRestaurantDetails) {
+  // Get day boundaries for selected restaurant
+  const getDayBoundaries = (restaurantFilter: string) => {
+    if (restaurantFilter === "all") {
       return { start: "07:00", end: "22:00" }; // Default range
     }
     
-    // Use selected restaurant's operating hours
+    const restaurantId = parseInt(restaurantFilter, 10);
+    const restaurant = restaurants.find(r => r.id === restaurantId);
+    
+    if (!restaurant) {
+      return { start: "07:00", end: "22:00" };
+    }
+    
     return {
-      start: selectedRestaurantDetails.start_time.slice(0, 5),
-      end: selectedRestaurantDetails.end_time.slice(0, 5),
+      start: restaurant.start_time.slice(0, 5),
+      end: restaurant.end_time.slice(0, 5),
     };
-  }, [selectedRestaurantDetails]);
+  };
   
+  // Get events for current selection
+  const currentEvents = useMemo(() => {
+    return getFilteredEvents(selectedValue);
+  }, [selectedValue]);
+  
+  // Get time boundaries for current selection
+  const currentDayBoundaries = useMemo(() => {
+    return getDayBoundaries(selectedValue);
+  }, [selectedValue, restaurants]);
+  
+  // Create the calendar app configuration
   const calendarApp = useNextCalendarApp({
     views: [
       createViewWeek(),
@@ -134,8 +142,8 @@ export default function EventCalendar() {
       },
     },
     selectedDate: new Date().toISOString().split('T')[0], // Today's date
-    events: calendarEvents,
-    dayBoundaries: dayBoundary,
+    events: currentEvents,
+    dayBoundaries: currentDayBoundaries,
     callbacks: {
       onEventClick: (event) => {
         // Show a popover with reservation details when an event is clicked
@@ -267,11 +275,40 @@ export default function EventCalendar() {
     }
   });
 
+  // Handle restaurant selection change
+  const handleRestaurantChange = (value: string) => {
+    setSelectedValue(value);
+    setCalendarKey(prevKey => prevKey + 1); // Force full re-render
+  };
+
+  // Debug logging
+  useEffect(() => {
+    const filteredEvents = getFilteredEvents(selectedValue);
+    console.log(`Selected restaurant: "${selectedValue}" - Events count: ${filteredEvents.length}`);
+    
+    // List restaurant IDs and names for debugging
+    console.log('Restaurants:', restaurants.map(r => ({ id: r.id, name: r.name })));
+    
+    // Debug event IDs and restaurant_id
+    if (selectedValue !== "all") {
+      const selectedRestaurantId = parseInt(selectedValue, 10);
+      console.log(`Selected restaurant ID: ${selectedRestaurantId}`);
+      
+      // Check all events for this restaurant ID
+      const allReservations = reservationData.reservations as Reservation[];
+      const matchingReservations = allReservations.filter(
+        res => res.restaurant_id === selectedRestaurantId
+      );
+      console.log(`Direct DB query shows ${matchingReservations.length} reservations for this restaurant`);
+    }
+  }, [selectedValue]);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4">
         <Select 
-          onValueChange={(value) => setSelectedRestaurant(value === "all" ? null : Number(value))}
+          onValueChange={handleRestaurantChange}
+          value={selectedValue}
           defaultValue="all"
         >
           <SelectTrigger className="w-full sm:w-[240px]">
@@ -288,7 +325,7 @@ export default function EventCalendar() {
         </Select>
       </div>
       
-      <div ref={calendarRef}>
+      <div ref={calendarRef} key={`calendar-${calendarKey}`}>
         <ScheduleXCalendar calendarApp={calendarApp} />
       </div>
     </div>

@@ -43,11 +43,11 @@ const data = {
       url: "/dashboard/analytics",
       icon: IconChartBar,
     },
-    {
-      title: "History",
-      url: "/dashboard/history",
-      icon: IconFolder,
-    },
+    // {
+    //   title: "History",
+    //   url: "/dashboard/history",
+    //   icon: IconFolder,
+    // },
     {
       title: "Users",
       url: "/dashboard/users",

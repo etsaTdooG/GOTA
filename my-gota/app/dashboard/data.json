@@ -454,60 +454,210 @@
   "tables": [
     {
       "table_id": 1,
+      "restaurant_id": 1,
       "table_number": "1",
       "capacity": 4,
       "description": "Bàn cạnh cửa sổ, view đẹp."
     },
     {
       "table_id": 2,
+      "restaurant_id": 1,
       "table_number": "2",
       "capacity": 2,
       "description": "Bàn đôi yên tĩnh ở góc."
     },
     {
       "table_id": 3,
+      "restaurant_id": 1,
       "table_number": "3",
       "capacity": 6,
       "description": "Bàn tròn lớn, phù hợp cho gia đình."
     },
     {
       "table_id": 4,
+      "restaurant_id": 1,
       "table_number": "4",
       "capacity": 8,
       "description": "Bàn dài ở khu vực trung tâm."
     },
     {
       "table_id": 5,
+      "restaurant_id": 1,
       "table_number": "5",
       "capacity": 2,
       "description": "Bàn nhỏ gần quầy bar."
     },
     {
       "table_id": 6,
+      "restaurant_id": 1,
       "table_number": "6",
       "capacity": 4,
       "description": "Bàn ở khu vực ngoài trời."
     },
     {
       "table_id": 7,
+      "restaurant_id": 1,
       "table_number": "7",
       "capacity": 10,
       "description": "Bàn lớn cho nhóm đông người."
     },
     {
       "table_id": 8,
+      "restaurant_id": 1,
       "table_number": "8",
       "capacity": 2,
       "description": "Bàn cao, thích hợp cho đồ uống nhanh."
     },
     {
       "table_id": 9,
+      "restaurant_id": 1,
       "table_number": "9",
       "capacity": 6,
       "description": "Bàn có sofa."
     },
     {
       "table_id": 10,
+      "restaurant_id": 1,
+      "table_number": "10",
+      "capacity": 4,
+      "description": "Bàn gần sân khấu nhỏ."
+    },
+    {
+      "table_id": 11,
+      "restaurant_id": 2,
+      "table_number": "1",
+      "capacity": 4,
+      "description": "Bàn cạnh cửa sổ, view đẹp."
+    },
+    {
+      "table_id": 12,
+      "restaurant_id": 2,
+      "table_number": "2",
+      "capacity": 2,
+      "description": "Bàn đôi yên tĩnh ở góc."
+    },
+    {
+      "table_id": 13,
+      "restaurant_id": 2,
+      "table_number": "3",
+      "capacity": 6,
+      "description": "Bàn tròn lớn, phù hợp cho gia đình."
+    },
+    {
+      "table_id": 14,
+      "restaurant_id": 2,
+      "table_number": "4",
+      "capacity": 8,
+      "description": "Bàn dài ở khu vực trung tâm."
+    },
+    {
+      "table_id": 15,
+      "restaurant_id": 2,
+      "table_number": "5",
+      "capacity": 2,
+      "description": "Bàn nhỏ gần quầy bar."
+    },
+    {
+      "table_id": 16,
+      "restaurant_id": 2,
+      "table_number": "6",
+      "capacity": 4,
+      "description": "Bàn ở khu vực ngoài trời."
+    },
+    {
+      "table_id": 17,
+      "restaurant_id": 2,
+      "table_number": "7",
+      "capacity": 10,
+      "description": "Bàn lớn cho nhóm đông người."
+    },
+    {
+      "table_id": 18,
+      "restaurant_id": 2,
+      "table_number": "8",
+      "capacity": 2,
+      "description": "Bàn cao, thích hợp cho đồ uống nhanh."
+    },
+    {
+      "table_id": 19,
+      "restaurant_id": 2,
+      "table_number": "9",
+      "capacity": 6,
+      "description": "Bàn có sofa."
+    },
+    {
+      "table_id": 20,
+      "restaurant_id": 2,
+      "table_number": "10",
+      "capacity": 4,
+      "description": "Bàn gần sân khấu nhỏ."
+    },
+    {
+      "table_id": 21,
+      "restaurant_id": 3,
+      "table_number": "1",
+      "capacity": 4,
+      "description": "Bàn cạnh cửa sổ, view đẹp."
+    },
+    {
+      "table_id": 22,
+      "restaurant_id": 3,
+      "table_number": "2",
+      "capacity": 2,
+      "description": "Bàn đôi yên tĩnh ở góc."
+    },
+    {
+      "table_id": 23,
+      "restaurant_id": 3,
+      "table_number": "3",
+      "capacity": 6,
+      "description": "Bàn tròn lớn, phù hợp cho gia đình."
+    },
+    {
+      "table_id": 24,
+      "restaurant_id": 3,
+      "table_number": "4",
+      "capacity": 8,
+      "description": "Bàn dài ở khu vực trung tâm."
+    },
+    {
+      "table_id": 25,
+      "restaurant_id": 3,
+      "table_number": "5",
+      "capacity": 2,
+      "description": "Bàn nhỏ gần quầy bar."
+    },
+    {
+      "table_id": 26,
+      "restaurant_id": 3,
+      "table_number": "6",
+      "capacity": 4,
+      "description": "Bàn ở khu vực ngoài trời."
+    },
+    {
+      "table_id": 27,
+      "restaurant_id": 3,
+      "table_number": "7",
+      "capacity": 10,
+      "description": "Bàn lớn cho nhóm đông người."
+    },
+    {
+      "table_id": 28,
+      "restaurant_id": 3,
+      "table_number": "8",
+      "capacity": 2,
+      "description": "Bàn cao, thích hợp cho đồ uống nhanh."
+    },
+    {
+      "table_id": 29,
+      "restaurant_id": 3,
+      "table_number": "9",
+      "capacity": 6,
+      "description": "Bàn có sofa."
+    },
+    {
+      "table_id": 30,
+      "restaurant_id": 3,
       "table_number": "10",
       "capacity": 4,
       "description": "Bàn gần sân khấu nhỏ."
@@ -544,7 +694,7 @@
       "reservation_id": 42,
       "user_id": "user-1",
       "restaurant_id": 2,
-      "table_id": 2,
+      "table_id": 12,
       "guest_count": 6,
       "reservation_date": "2025-03-20",
       "start_time": "19:30:00",
@@ -557,7 +707,7 @@
       "reservation_id": 2,
       "user_id": "user-5",
       "restaurant_id": 3,
-      "table_id": 2,
+      "table_id": 22,
       "guest_count": 2,
       "reservation_date": "2025-01-10",
       "start_time": "12:00:00",
@@ -570,7 +720,7 @@
       "reservation_id": 3,
       "user_id": "user-10",
       "restaurant_id": 2,
-      "table_id": 3,
+      "table_id": 13,
       "guest_count": 5,
       "reservation_date": "2025-01-20",
       "start_time": "20:00:00",
@@ -582,6 +732,7 @@
     {
       "reservation_id": 4,
       "user_id": "user-15",
+      "restaurant_id": 1,
       "table_id": 1,
       "guest_count": 3,
       "reservation_date": "2025-01-25",
@@ -594,7 +745,8 @@
     {
       "reservation_id": 5,
       "user_id": "user-20",
-      "table_id": 4,
+      "restaurant_id": 2,
+      "table_id": 14,
       "guest_count": 7,
       "reservation_date": "2025-02-05",
       "start_time": "19:30:00",
@@ -606,7 +758,8 @@
     {
       "reservation_id": 6,
       "user_id": "user-25",
-      "table_id": 5,
+      "restaurant_id": 2,
+      "table_id": 15,
       "guest_count": 2,
       "reservation_date": "2025-02-10",
       "start_time": "11:30:00",
@@ -618,6 +771,7 @@
     {
       "reservation_id": 7,
       "user_id": "user-30",
+      "restaurant_id": 1,
       "table_id": 3,
       "guest_count": 4,
       "reservation_date": "2025-02-15",
@@ -630,6 +784,7 @@
     {
       "reservation_id": 8,
       "user_id": "user-35",
+      "restaurant_id": 1,
       "table_id": 2,
       "guest_count": 2,
       "reservation_date": "2025-02-20",
@@ -642,6 +797,7 @@
     {
       "reservation_id": 9,
       "user_id": "user-40",
+      "restaurant_id": 1,
       "table_id": 1,
       "guest_count": 4,
       "reservation_date": "2025-02-25",
@@ -654,7 +810,8 @@
     {
       "reservation_id": 10,
       "user_id": "user-45",
-      "table_id": 5,
+      "restaurant_id": 2,
+      "table_id": 15,
       "guest_count": 1,
       "reservation_date": "2025-03-02",
       "start_time": "12:00:00",
@@ -666,7 +823,8 @@
     {
       "reservation_id": 11,
       "user_id": "user-2",
-      "table_id": 6,
+      "restaurant_id": 2,
+      "table_id": 16,
       "guest_count": 3,
       "reservation_date": "2025-03-05",
       "start_time": "18:30:00",
@@ -678,7 +836,8 @@
     {
       "reservation_id": 12,
       "user_id": "user-7",
-      "table_id": 7,
+      "restaurant_id": 3,
+      "table_id": 27,
       "guest_count": 9,
       "reservation_date": "2025-03-10",
       "start_time": "20:00:00",
@@ -690,7 +849,8 @@
     {
       "reservation_id": 13,
       "user_id": "user-12",
-      "table_id": 8,
+      "restaurant_id": 3,
+      "table_id": 28,
       "guest_count": 2,
       "reservation_date": "2025-03-15",
       "start_time": "19:00:00",
@@ -702,7 +862,8 @@
     {
       "reservation_id": 14,
       "user_id": "user-17",
-      "table_id": 9,
+      "restaurant_id": 3,
+      "table_id": 29,
       "guest_count": 6,
       "reservation_date": "2025-03-20",
       "start_time": "12:30:00",
@@ -714,6 +875,7 @@
     {
       "reservation_id": 15,
       "user_id": "user-22",
+      "restaurant_id": 1,
       "table_id": 10,
       "guest_count": 4,
       "reservation_date": "2025-03-25",
@@ -726,6 +888,7 @@
     {
       "reservation_id": 16,
       "user_id": "user-27",
+      "restaurant_id": 1,
       "table_id": 1,
       "guest_count": 2,
       "reservation_date": "2025-03-29",
@@ -738,7 +901,8 @@
     {
       "reservation_id": 17,
       "user_id": "user-32",
-      "table_id": 4,
+      "restaurant_id": 2,
+      "table_id": 14,
       "guest_count": 5,
       "reservation_date": "2025-03-01",
       "start_time": "19:30:00",
@@ -750,7 +914,8 @@
     {
       "reservation_id": 18,
       "user_id": "user-37",
-      "table_id": 7,
+      "restaurant_id": 3,
+      "table_id": 27,
       "guest_count": 8,
       "reservation_date": "2025-03-07",
       "start_time": "12:00:00",
@@ -762,6 +927,7 @@
     {
       "reservation_id": 19,
       "user_id": "user-42",
+      "restaurant_id": 1,
       "table_id": 2,
       "guest_count": 2,
       "reservation_date": "2025-03-12",
@@ -774,7 +940,8 @@
     {
       "reservation_id": 20,
       "user_id": "user-47",
-      "table_id": 9,
+      "restaurant_id": 3,
+      "table_id": 29,
       "guest_count": 6,
       "reservation_date": "2025-03-17",
       "start_time": "20:00:00",
@@ -786,7 +953,8 @@
     {
       "reservation_id": 21,
       "user_id": "user-3",
-      "table_id": 5,
+      "restaurant_id": 2,
+      "table_id": 15,
       "guest_count": 1,
       "reservation_date": "2025-03-22",
       "start_time": "13:30:00",
@@ -798,7 +966,8 @@
     {
       "reservation_id": 22,
       "user_id": "user-8",
-      "table_id": 10,
+      "restaurant_id": 3,
+      "table_id": 30,
       "guest_count": 3,
       "reservation_date": "2025-03-27",
       "start_time": "19:30:00",
@@ -810,6 +979,7 @@
     {
       "reservation_id": 23,
       "user_id": "user-13",
+      "restaurant_id": 1,
       "table_id": 1,
       "guest_count": 4,
       "reservation_date": "2025-01-02",
@@ -822,7 +992,8 @@
     {
       "reservation_id": 24,
       "user_id": "user-18",
-      "table_id": 6,
+      "restaurant_id": 2,
+      "table_id": 16,
       "guest_count": 2,
       "reservation_date": "2025-01-07",
       "start_time": "20:00:00",
@@ -834,6 +1005,7 @@
     {
       "reservation_id": 25,
       "user_id": "user-23",
+      "restaurant_id": 1,
       "table_id": 3,
       "guest_count": 6,
       "reservation_date": "2025-01-12",
@@ -846,7 +1018,8 @@
     {
       "reservation_id": 26,
       "user_id": "user-28",
-      "table_id": 8,
+      "restaurant_id": 3,
+      "table_id": 28,
       "guest_count": 1,
       "reservation_date": "2025-01-17",
       "start_time": "19:00:00",
@@ -858,7 +1031,8 @@
     {
       "reservation_id": 27,
       "user_id": "user-33",
-      "table_id": 4,
+      "restaurant_id": 2,
+      "table_id": 14,
       "guest_count": 5,
       "reservation_date": "2025-01-22",
       "start_time": "18:30:00",
@@ -870,7 +1044,8 @@
     {
       "reservation_id": 28,
       "user_id": "user-38",
-      "table_id": 9,
+      "restaurant_id": 3,
+      "table_id": 29,
       "guest_count": 7,
       "reservation_date": "2025-01-27",
       "start_time": "20:30:00",
@@ -882,6 +1057,7 @@
     {
       "reservation_id": 29,
       "user_id": "user-43",
+      "restaurant_id": 1,
       "table_id": 2,
       "guest_count": 2,
       "reservation_date": "2025-02-01",
@@ -894,7 +1070,8 @@
     {
       "reservation_id": 30,
       "user_id": "user-48",
-      "table_id": 7,
+      "restaurant_id": 3,
+      "table_id": 27,
       "guest_count": 10,
       "reservation_date": "2025-02-06",
       "start_time": "19:00:00",
@@ -906,6 +1083,7 @@
     {
       "reservation_id": 31,
       "user_id": "user-4",
+      "restaurant_id": 1,
       "table_id": 1,
       "guest_count": 3,
       "reservation_date": "2025-02-11",
@@ -918,7 +1096,8 @@
     {
       "reservation_id": 32,
       "user_id": "user-9",
-      "table_id": 6,
+      "restaurant_id": 2,
+      "table_id": 16,
       "guest_count": 2,
       "reservation_date": "2025-02-16",
       "start_time": "20:00:00",
@@ -930,6 +1109,7 @@
     {
       "reservation_id": 33,
       "user_id": "user-14",
+      "restaurant_id": 1,
       "table_id": 3,
       "guest_count": 5,
       "reservation_date": "2025-02-21",
@@ -942,7 +1122,8 @@
     {
       "reservation_id": 34,
       "user_id": "user-19",
-      "table_id": 8,
+      "restaurant_id": 3,
+      "table_id": 28,
       "guest_count": 1,
       "reservation_date": "2025-02-26",
       "start_time": "19:30:00",
@@ -954,7 +1135,8 @@
     {
       "reservation_id": 35,
       "user_id": "user-24",
-      "table_id": 4,
+      "restaurant_id": 2,
+      "table_id": 14,
       "guest_count": 6,
       "reservation_date": "2025-03-03",
       "start_time": "18:00:00",
@@ -966,7 +1148,8 @@
     {
       "reservation_id": 36,
       "user_id": "user-29",
-      "table_id": 9,
+      "restaurant_id": 3,
+      "table_id": 29,
       "guest_count": 8,
       "reservation_date": "2025-03-08",
       "start_time": "21:00:00",
@@ -978,6 +1161,7 @@
     {
       "reservation_id": 37,
       "user_id": "user-34",
+      "restaurant_id": 1,
       "table_id": 2,
       "guest_count": 2,
       "reservation_date": "2025-03-13",
@@ -990,7 +1174,8 @@
     {
       "reservation_id": 38,
       "user_id": "user-39",
-      "table_id": 7,
+      "restaurant_id": 3,
+      "table_id": 27,
       "guest_count": 9,
       "reservation_date": "2025-03-18",
       "start_time": "19:30:00",
@@ -1002,6 +1187,7 @@
     {
       "reservation_id": 39,
       "user_id": "user-44",
+      "restaurant_id": 1,
       "table_id": 1,
       "guest_count": 4,
       "reservation_date": "2025-03-23",
@@ -1014,7 +1200,8 @@
     {
       "reservation_id": 40,
       "user_id": "user-49",
-      "table_id": 6,
+      "restaurant_id": 2,
+      "table_id": 16,
       "guest_count": 3,
       "reservation_date": "2025-03-28",
       "start_time": "20:00:00",

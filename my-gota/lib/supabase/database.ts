@@ -1,4 +1,5 @@
-import { createClient } from './server';
+import { createClient as createServerClient } from './server';
+import { createClient as createBrowserClient } from './client';
 
 // Type definitions based on data.json structure
 export type User = {
@@ -42,9 +43,12 @@ export type Reservation = {
   notes: string | null;
 };
 
-// Fetchers for each table
+// Helper function to determine if we are on the client-side
+const isClient = typeof window !== 'undefined';
+
+// Fetchers for each table that work in both client and server components
 export async function getUsers(): Promise<User[]> {
-  const supabase = await createClient();
+  const supabase = isClient ? createBrowserClient() : await createServerClient();
   const { data, error } = await supabase
     .from('users')
     .select('*')
@@ -59,7 +63,7 @@ export async function getUsers(): Promise<User[]> {
 }
 
 export async function getUserById(id: string): Promise<User | null> {
-  const supabase = await createClient();
+  const supabase = isClient ? createBrowserClient() : await createServerClient();
   const { data, error } = await supabase
     .from('users')
     .select('*')
@@ -75,7 +79,7 @@ export async function getUserById(id: string): Promise<User | null> {
 }
 
 export async function getRestaurants(): Promise<Restaurant[]> {
-  const supabase = await createClient();
+  const supabase = isClient ? createBrowserClient() : await createServerClient();
   const { data, error } = await supabase
     .from('restaurants')
     .select('*')
@@ -90,7 +94,7 @@ export async function getRestaurants(): Promise<Restaurant[]> {
 }
 
 export async function getRestaurantById(id: number): Promise<Restaurant | null> {
-  const supabase = await createClient();
+  const supabase = isClient ? createBrowserClient() : await createServerClient();
   const { data, error } = await supabase
     .from('restaurants')
     .select('*')
@@ -106,7 +110,7 @@ export async function getRestaurantById(id: number): Promise<Restaurant | null> 
 }
 
 export async function getTables(restaurantId?: number): Promise<Table[]> {
-  const supabase = await createClient();
+  const supabase = isClient ? createBrowserClient() : await createServerClient();
   let query = supabase.from('tables').select('*');
   
   if (restaurantId) {
@@ -124,7 +128,7 @@ export async function getTables(restaurantId?: number): Promise<Table[]> {
 }
 
 export async function getTableById(tableId: number): Promise<Table | null> {
-  const supabase = await createClient();
+  const supabase = isClient ? createBrowserClient() : await createServerClient();
   const { data, error } = await supabase
     .from('tables')
     .select('*')
@@ -146,7 +150,7 @@ export async function getReservations(filters?: {
   date?: string;
   status?: string;
 }): Promise<Reservation[]> {
-  const supabase = await createClient();
+  const supabase = isClient ? createBrowserClient() : await createServerClient();
   let query = supabase.from('reservations').select('*');
   
   if (filters) {
@@ -168,7 +172,7 @@ export async function getReservations(filters?: {
 }
 
 export async function getReservationById(reservationId: number): Promise<Reservation | null> {
-  const supabase = await createClient();
+  const supabase = isClient ? createBrowserClient() : await createServerClient();
   const { data, error } = await supabase
     .from('reservations')
     .select('*')
@@ -185,7 +189,7 @@ export async function getReservationById(reservationId: number): Promise<Reserva
 
 // Update functions
 export async function updateReservationStatus(reservationId: number, status: string): Promise<boolean> {
-  const supabase = await createClient();
+  const supabase = isClient ? createBrowserClient() : await createServerClient();
   const { error } = await supabase
     .from('reservations')
     .update({ status })
@@ -201,7 +205,7 @@ export async function updateReservationStatus(reservationId: number, status: str
 
 // Create functions
 export async function createReservation(reservation: Omit<Reservation, 'reservation_id' | 'created_at'>): Promise<Reservation | null> {
-  const supabase = await createClient();
+  const supabase = isClient ? createBrowserClient() : await createServerClient();
   const { data, error } = await supabase
     .from('reservations')
     .insert([reservation])

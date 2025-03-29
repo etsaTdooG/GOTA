@@ -7,7 +7,7 @@ import {
   IconDashboard,
   IconFileAi,
   IconFileDescription,
-  IconFolder,
+  // IconFolder, // Unused import
   IconSettings,
   IconUsers,
   IconCookie, // Add this new import

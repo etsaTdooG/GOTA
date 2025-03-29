@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { useTimeRange } from "@/components/time-range-context"
+import { createClient } from "@/lib/supabase/client"
 
 // Utility function to calculate trend percentage
 const calculateTrend = (current: number, previous: number): number => {
@@ -51,8 +52,23 @@ export function SectionCards() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Load JSON data
-        const jsonData = await import("@/app/dashboard/data.json").then(module => module.default)
+        // Load data from Supabase using direct client
+        const supabase = createClient();
+        const [reservationsResponse, usersResponse] = await Promise.all([
+          supabase.from('reservations').select('*'),
+          supabase.from('users').select('*')
+        ]);
+        
+        if (reservationsResponse.error) {
+          throw new Error(`Error fetching reservations: ${reservationsResponse.error.message}`);
+        }
+        
+        if (usersResponse.error) {
+          throw new Error(`Error fetching users: ${usersResponse.error.message}`);
+        }
+        
+        const reservationsData = reservationsResponse.data || [];
+        const usersData = usersResponse.data || [];
         
         // Get current date and calculate dates for selected period
         const now = new Date('2025-03-29T00:00:00Z') // Reference date from the data
@@ -73,7 +89,7 @@ export function SectionCards() {
         }
         
         // Filter reservations for current period
-        const currentPeriodReservations = jsonData.reservations.filter(res => {
+        const currentPeriodReservations = reservationsData.filter(res => {
           const resDate = new Date(res.created_at)
           return resDate >= startDate && resDate <= now
         })
@@ -82,7 +98,7 @@ export function SectionCards() {
         const previousEndDate = new Date(startDate)
         previousEndDate.setDate(previousEndDate.getDate() - 1)
         
-        const previousPeriodReservations = jsonData.reservations.filter(res => {
+        const previousPeriodReservations = reservationsData.filter(res => {
           const resDate = new Date(res.created_at)
           return resDate >= previousStartDate && resDate <= previousEndDate
         })
@@ -98,7 +114,7 @@ export function SectionCards() {
           // For short time ranges, consider pending accounts too
           activeStatusFilter = 'Active'
         }
-        const currentActiveAccounts = jsonData.users.filter(user => user.status === activeStatusFilter).length
+        const currentActiveAccounts = usersData.filter(user => user.status === activeStatusFilter).length
         
         // Calculate metrics for previous period
         const previousTotalGuests = previousPeriodReservations.reduce((sum, res) => sum + res.guest_count, 0)

@@ -30,8 +30,8 @@ import {
   ToggleGroupItem,
 } from "@/components/ui/toggle-group"
 import { useTimeRange } from "@/components/time-range-context"
-
-import data from "@/app/dashboard/data.json"
+import { createClient } from "@/lib/supabase/client"
+import type { Reservation } from "@/lib/supabase/database"
 
 export const description = "An interactive area chart"
 
@@ -57,6 +57,36 @@ export function ChartAreaInteractive() {
   const isMobile = useIsMobile()
   const { timeRange, setTimeRange, getTimeRangeText } = useTimeRange()
   const [activeUsers, setActiveUsers] = React.useState(0)
+  const [reservationsData, setReservationsData] = React.useState<Reservation[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+
+  // Fetch reservations data
+  React.useEffect(() => {
+    const fetchReservations = async () => {
+      try {
+        setIsLoading(true)
+        // Use the client directly
+        const supabase = createClient()
+        const { data, error } = await supabase
+          .from('reservations')
+          .select('*')
+          .order('reservation_date', { ascending: true })
+        
+        if (error) {
+          console.error("Error fetching reservations:", error)
+          return
+        }
+        
+        setReservationsData(data || [])
+      } catch (error) {
+        console.error("Error fetching reservations:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    fetchReservations()
+  }, [])
 
   React.useEffect(() => {
     if (isMobile) {
@@ -67,7 +97,7 @@ export function ChartAreaInteractive() {
   // Process the data for chart
   const processedData = React.useMemo(() => {
     // Group reservations by date
-    const reservationsByDate = data.reservations.reduce((acc, reservation) => {
+    const reservationsByDate = reservationsData.reduce((acc, reservation) => {
       const date = reservation.created_at;
       if (!acc[date]) {
         acc[date] = {
@@ -92,7 +122,7 @@ export function ChartAreaInteractive() {
         users: Array.from(item.users)
       }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, []);
+  }, [reservationsData]);
 
   // Filter data based on selected time range
   const filteredData = React.useMemo(() => {
@@ -134,37 +164,43 @@ export function ChartAreaInteractive() {
           <span className="@[540px]/card:hidden">{getTimeRangeText()}</span>
         </CardDescription>
         <CardAction>
-          <ToggleGroup
-            type="single"
-            value={timeRange}
-            onValueChange={setTimeRange}
-            variant="outline"
-            className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex"
-          >
-            <ToggleGroupItem value="90d">Last 3 months</ToggleGroupItem>
-            <ToggleGroupItem value="30d">Last 30 days</ToggleGroupItem>
-            <ToggleGroupItem value="7d">Last 7 days</ToggleGroupItem>
-          </ToggleGroup>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger
-              className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
-              size="sm"
-              aria-label="Select a value"
-            >
-              <SelectValue placeholder="Last 3 months" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="90d" className="rounded-lg">
-                Last 3 months
-              </SelectItem>
-              <SelectItem value="30d" className="rounded-lg">
-                Last 30 days
-              </SelectItem>
-              <SelectItem value="7d" className="rounded-lg">
-                Last 7 days
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          {isLoading ? (
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+          ) : (
+            <>
+              <ToggleGroup
+                type="single"
+                value={timeRange}
+                onValueChange={setTimeRange}
+                variant="outline"
+                className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex"
+              >
+                <ToggleGroupItem value="90d">Last 3 months</ToggleGroupItem>
+                <ToggleGroupItem value="30d">Last 30 days</ToggleGroupItem>
+                <ToggleGroupItem value="7d">Last 7 days</ToggleGroupItem>
+              </ToggleGroup>
+              <Select value={timeRange} onValueChange={setTimeRange}>
+                <SelectTrigger
+                  className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
+                  size="sm"
+                  aria-label="Select a value"
+                >
+                  <SelectValue placeholder="Last 3 months" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="90d" className="rounded-lg">
+                    Last 3 months
+                  </SelectItem>
+                  <SelectItem value="30d" className="rounded-lg">
+                    Last 30 days
+                  </SelectItem>
+                  <SelectItem value="7d" className="rounded-lg">
+                    Last 7 days
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </>
+          )}
         </CardAction>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">

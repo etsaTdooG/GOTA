@@ -113,6 +113,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
+import { createClient } from "@/lib/supabase/client"
+
 export const schema = z.object({
   id: z.string(),
   email: z.string(),
@@ -602,14 +604,25 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
   // Use React.useCallback to memoize the function
   const loadReservationsData = React.useCallback(async () => {
     try {
-      const reservationsData = await import("@/app/dashboard/data.json").then(module => module.default);
+      // Use Supabase client directly
+      const supabase = createClient();
+      const { data: reservationsData, error } = await supabase
+        .from('reservations')
+        .select('*')
+        .eq('user_id', item.id);
+      
+      if (error) {
+        console.error(`Error fetching reservations for user ${item.id}:`, error);
+        setChartData([]);
+        setTrendingValue(0);
+        setIsDataLoaded(true);
+        return;
+      }
       
       console.log(`User ${item.name} (${item.id}) - Loading data...`);
       
-      // Get reservations for this user
-      const userReservations = reservationsData.reservations.filter(
-        (res) => res.user_id === item.id
-      );
+      // Get reservations for this user - we've already filtered by userId in the query
+      const userReservations = reservationsData || [];
   
       if (userReservations.length === 0) {
         setChartData([]);

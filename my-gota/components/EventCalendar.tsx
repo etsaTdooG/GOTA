@@ -11,8 +11,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { createClient } from "@/lib/supabase/client";
-import type { Restaurant, Reservation, User } from "@/lib/supabase/database";
+import type { Restaurant, Reservation } from "@/lib/supabase/database";
 import { getRestaurants, getReservations, getUserById, getRestaurantById } from "@/lib/supabase/database";
 
 // Event data type with additional properties
@@ -136,7 +135,7 @@ export default function EventCalendar() {
   // Get time boundaries for current selection
   const currentDayBoundaries = useMemo(() => {
     return getDayBoundaries(selectedValue);
-  }, [selectedValue, restaurants]);
+  }, [selectedValue, restaurants, getDayBoundaries]);
   
   // Create the calendar app configuration
   const calendarApp = useNextCalendarApp({

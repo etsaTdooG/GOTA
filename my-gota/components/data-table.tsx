@@ -31,7 +31,6 @@ import {
   IconLayoutColumns,
   IconTrash,
   IconTrendingUp,
-  IconRefresh,
   IconSortAscending,
   IconSortDescending,
 } from "@tabler/icons-react"
@@ -438,7 +437,7 @@ export function DataTable({
         event: '*',
         schema: 'public',
         table: 'users'
-      }, (payload: any) => {
+      }, (payload: {eventType: string, old: Record<string, unknown>, new: Record<string, unknown>}) => {
         console.log('Real-time update received:', payload);
         
         // Handle different types of changes
@@ -482,31 +481,6 @@ export function DataTable({
       window.removeEventListener('refreshUsersData', handleRefreshEvent as EventListener);
     };
   }, []);
-
-  // Function to manually refresh data - keep for internal use by other components
-  const refreshData = async () => {
-    try {
-      const supabase = createClient();
-      const { data: refreshedData, error } = await supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false });
-        
-      if (error) {
-        console.error('Error refreshing data:', error);
-        toast.error('Failed to refresh data');
-        return;
-      }
-      
-      console.log('Refreshed data:', refreshedData);
-      if (refreshedData) {
-        setData(refreshedData as z.infer<typeof schema>[]);
-      }
-    } catch (error) {
-      console.error('Error refreshing data:', error);
-      toast.error('Failed to refresh data');
-    }
-  };
 
   const table = useReactTable({
     data,
@@ -1100,7 +1074,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
       toast.success('User updated successfully');
       
       // Manually trigger a refresh after successful update
-      const refreshData = async () => {
+      await (async () => {
         try {
           const { data: refreshedData, error: refreshError } = await supabase
             .from('users')
@@ -1122,10 +1096,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
         } catch (refreshErr) {
           console.error('Error refreshing data:', refreshErr);
         }
-      };
-      
-      // Call the refresh function
-      await refreshData();
+      })();
       
       // Close the drawer
       const closeButton = document.querySelector('[data-drawer-close]') as HTMLButtonElement;

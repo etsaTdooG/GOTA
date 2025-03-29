@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { DataTable } from "@/components/data-table";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@/lib/supabase/database";
@@ -14,7 +14,7 @@ export default function Page() {
   const [pageSize, setPageSize] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     
@@ -52,7 +52,7 @@ export default function Page() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [pageIndex, pageSize]);
   
   useEffect(() => {
     fetchUsers();
@@ -74,7 +74,7 @@ export default function Page() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [pageIndex, pageSize]);
+  }, [pageIndex, pageSize, fetchUsers]);
   
   const onPageChange = (newPageIndex: number, newPageSize: number) => {
     setPageIndex(newPageIndex);
